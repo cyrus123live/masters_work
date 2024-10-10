@@ -77,6 +77,38 @@ def calculate_macd(data, slow=26, fast=12, signal=9):
     histogram = macd - signal_line
     return macd, signal_line, histogram
 
+def calculate_adx(data, window=14):
+    # Calculate True Range (TR)
+    high_low = data['High'] - data['Low']
+    high_close = np.abs(data['High'] - data['Close'].shift())
+    low_close = np.abs(data['Low'] - data['Close'].shift())
+    tr = high_low.combine(high_close, max).combine(low_close, max)
+
+    # Calculate Directional Movement (+DM, -DM)
+    plus_dm = data['High'].diff()
+    minus_dm = data['Low'].diff()
+
+    # Assign positive and negative directional movements
+    plus_dm[plus_dm < 0] = 0
+    minus_dm[minus_dm > 0] = 0
+
+    # Smooth the True Range, +DM, and -DM
+    atr = tr.rolling(window=window).mean()
+    smoothed_plus_dm = plus_dm.rolling(window=window).mean()
+    smoothed_minus_dm = abs(minus_dm.rolling(window=window).mean())
+
+    # Calculate +DI and -DI
+    plus_di = 100 * (smoothed_plus_dm / atr)
+    minus_di = 100 * (smoothed_minus_dm / atr)
+
+    # Calculate the Directional Index (DX)
+    dx = 100 * (abs(plus_di - minus_di) / (plus_di + minus_di))
+
+    # Calculate the ADX by smoothing the DX
+    adx = dx.rolling(window=window).mean()
+
+    return adx
+
 
 # ---------------------------------------------------- 
 
@@ -90,21 +122,22 @@ def process_data(data):
     processed_data["D_HL"] = data["high"] - data["low"]
     
     # Technical indicators by Chatgpt ----- 
-    # processed_data["High"] = data["high"]
-    # processed_data["Low"] = data["low"]
-    # processed_data["Open"] = data["open"]
-    # processed_data["Volume"] = data["volume"]
+    processed_data["High"] = data["high"]
+    processed_data["Low"] = data["low"]
+    processed_data["Open"] = data["open"]
+    processed_data["Volume"] = data["volume"]
 
     # processed_data['SMA_20'] = processed_data['Close'].rolling(window=20).mean()
     # processed_data['EMA_20'] = processed_data['Close'].ewm(span=20, adjust=False).mean()
-    # processed_data['RSI'] = calculate_rsi(processed_data)
+    processed_data['RSI'] = calculate_rsi(processed_data)
     # processed_data['ATR'] = calculate_atr(processed_data)
-    # processed_data['MACD'], processed_data['MACD_Signal'], _ = calculate_macd(processed_data)
+    processed_data['MACD'], processed_data['MACD_Signal'], _ = calculate_macd(processed_data)
     # processed_data['Bollinger_Mid'], processed_data['Bollinger_Upper'], processed_data['Bollinger_Lower'] = calculate_bollinger_bands(processed_data)
-    # processed_data['CCI'] = calculate_cci(processed_data)
+    processed_data['CCI'] = calculate_cci(processed_data)
     # processed_data['Williams_%R'] = calculate_williams_r(processed_data)
     # processed_data['CMF'] = calculate_cmf(processed_data)
     # processed_data['OBV'] = calculate_obv(processed_data)
+    processed_data['ADX'] = calculate_adx(processed_data)
     #  --------------------------
 
     for feature in processed_data.columns:
@@ -116,14 +149,21 @@ def process_data(data):
         processed_data[f'{feature}_Normalized'] = (processed_data[feature] - rolling_mean) / rolling_std
 
         # Min-Max Scaling to range -1 to 1 using rolling window 
-        rolling_min = processed_data[f'{feature}_Normalized'].rolling(window=20).min()
-        rolling_max = processed_data[f'{feature}_Normalized'].rolling(window=20).max()
-        processed_data[f'{feature}_Scaled'] = -1 + 2 * (processed_data[f'{feature}_Normalized'] - rolling_min) / (rolling_max - rolling_min)
+        # rolling_min = processed_data[f'{feature}_Normalized'].rolling(window=20).min()
+        # rolling_max = processed_data[f'{feature}_Normalized'].rolling(window=20).max()
+        # processed_data[f'{feature}_Scaled'] = -1 + 2 * (processed_data[f'{feature}_Normalized'] - rolling_min) / (rolling_max - rolling_min)
 
     processed_data.dropna(inplace=True)
 
     return processed_data.between_time('07:00', '16:00')
 
+def get_min_max_values():
+    historical_data = get_consecutive_months(dt.datetime(year=2000, month=1, day=1), 120) # get 2000-2010 data 
+    for c in historical_data.columns:
+        print(c)
+        print("Max: ", historical_data[c].max()) 
+        print("Min: ", historical_data[c].min())
+    
 
 def get_month_csv(year, month):
     folder_name = "spy_data"

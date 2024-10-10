@@ -15,17 +15,15 @@ Loops 3 months long:
 '''
 
 # Backtest
-# starting_month = datetime.date(year=2016, month=1, day=1)
-# ending_month = datetime.date(year=2020, month=7, day=1)
 starting_month = dt.date(year=2016, month=1, day=1)
-ending_month = dt.date(year=2017, month=1, day=1)
+ending_month = dt.date(year=2020, month=7, day=1)
 
 train_months = 3
 validation_months = 3
 trade_months = 3
-num_contenders = 5
-training_rounds_per_contender = 5
-starting_cash = 1000000
+num_contenders = 10
+training_rounds_per_contender = 10
+starting_cash = 10000000
 
 cash = starting_cash
 history = pd.DataFrame()

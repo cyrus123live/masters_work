@@ -16,10 +16,9 @@ class TradingEnv(gym.Env):
         self.starting_cash = 10000000
         self.k = int(self.starting_cash / df['Close'].iloc[0]) # Maximum amount of stocks bought or sold each minute
         
-        self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
+        self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float64)
         self.observation_space = spaces.Box(
-            #low=-np.inf, high=np.inf, shape=(5,), dtype=np.float32 # Model 24 and below use this
-            low=-1, high=1, shape=(self.df[self.df.filter(regex='_Scaled$').columns].shape[1] + 2,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(7,), dtype=np.float64
         ) 
         
         # Set starting point
@@ -39,16 +38,16 @@ class TradingEnv(gym.Env):
 
     def _get_obs(self):
 
-        # current_row = self.df[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[self.current_step] # Model 25 and below
-        current_row = self.df[self.df.filter(regex='_Scaled$').columns].iloc[self.current_step]
-        close = self.df["Close"].iloc[self.current_step]
+        # current_row = self.df[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[self.current_step] 
+        # current_row = self.df[self.df.filter(regex='_Scaled$').columns].iloc[self.current_step]
+        current_row = self.df[["Close_Normalized", "MACD_Normalized", "RSI_Normalized", "CCI_Normalized", "ADX_Normalized"]].iloc[self.current_step]
 
         # amount_held = float((self.stock * close) / (self.stock * close + self.cash))
-        # amount_held = self.stock / self.k 
-        amount_held = np.clip(2 * self.stock / self.k - 1, -1, 1)
+        amount_held = self.stock / self.k 
+        # amount_held = np.clip(2 * self.stock / self.k - 1, -1, 1)
         
-        # cash_normalized = self.cash / self.starting_cash
-        cash_normalized = np.clip(2 * self.cash / self.starting_cash - 1, -1, 1)
+        cash_normalized = self.cash / self.starting_cash
+        # cash_normalized = np.clip(2 * self.cash / self.starting_cash - 1, -1, 1)
         return np.array(current_row.tolist() + [amount_held, cash_normalized])
 
     def _take_action(self, action):

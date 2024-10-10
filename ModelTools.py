@@ -66,8 +66,10 @@ def test_model(model, test_data, starting_cash = 10000000):
     for i in range(test_data.shape[0]):
 
         data = test_data.iloc[i]
-        obs = np.array(test_data[test_data.filter(regex='_Scaled$').columns].iloc[i].tolist() + [np.clip(2 * held / k - 1, -1, 1), np.clip(2 * cash / 10000000 - 1, -1, 1)])
-
+        # obs = np.array(test_data[test_data.filter(regex='_Scaled$').columns].iloc[i].tolist() + [np.clip(2 * held / k - 1, -1, 1), np.clip(2 * cash / starting_cash - 1, -1, 1)])
+        # obs = np.array(test_data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[i].tolist() + [held / k, cash / starting_cash])
+        obs = np.array(test_data[["Close_Normalized", "MACD_Normalized", "RSI_Normalized", "CCI_Normalized", "ADX_Normalized"]].iloc[i].tolist() + [held / k, cash / starting_cash])
+        
         action = model.predict(obs, deterministic=True)[0][0]
 
         if action < 0:
