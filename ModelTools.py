@@ -69,7 +69,7 @@ def test_model(model, test_data, starting_cash = 10000000):
         # obs = np.array(test_data[test_data.filter(regex='_Scaled$').columns].iloc[i].tolist() + [np.clip(2 * held / k - 1, -1, 1), np.clip(2 * cash / starting_cash - 1, -1, 1)])
         # obs = np.array(test_data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[i].tolist() + [held / k, cash / starting_cash])
         obs = np.array(test_data[["Close_Normalized", "MACD_Normalized", "RSI_Normalized", "CCI_Normalized", "ADX_Normalized"]].iloc[i].tolist() + [held / k, cash / starting_cash])
-        
+
         action = model.predict(obs, deterministic=True)[0][0]
 
         if action < 0:
@@ -85,12 +85,14 @@ def test_model(model, test_data, starting_cash = 10000000):
     return pd.DataFrame(history, index=test_data.index)
 
 
-def train_PPO(train_data, test_data, training_rounds_per_contender):
+def train_PPO(train_data, test_data, training_rounds_per_contender, PPO_contenders = []):
 
     train_env = Monitor(TradingEnv(train_data))
     model = PPO("MlpPolicy", train_env, verbose=0)
     best_model = model
     best_score = 0
+
+    print("Started Training a model")
     
     for i in range(training_rounds_per_contender):
 
@@ -102,4 +104,8 @@ def train_PPO(train_data, test_data, training_rounds_per_contender):
 
         print(f"- Ended training round {i + 1}/{training_rounds_per_contender} with score {score:.2f}")
 
+
+    print(f"- Ended training with score {best_score:.2f}")
+
+    PPO_contenders.append({"model": best_model, "score": best_score})
     return {"model": best_model, "score": best_score}
