@@ -91,14 +91,14 @@ def test_model(model, test_data, starting_cash = 10000000):
     return pd.DataFrame(history, index=test_data.index)
 
 
-def train_PPO(train_data, test_data, training_rounds_per_contender, contender_name, results):
+def train_PPO(train_data, test_data, training_rounds_per_contender, contender_name, PPO_Contenders):
 
     train_env = Monitor(TradingEnv(train_data))
     model = PPO("MlpPolicy", train_env, verbose=0)
     best_model = model
     best_score = 0
 
-    # print("Started Training a model")
+    print("Started Training a model")
     
     for i in range(training_rounds_per_contender):
 
@@ -111,11 +111,12 @@ def train_PPO(train_data, test_data, training_rounds_per_contender, contender_na
         # print(f"- Ended training round {i + 1}/{training_rounds_per_contender} with score {score:.2f}")
 
     best_model.save(contender_name)
-    results[contender_name] = {
+    PPO_Contenders.append({
+        "model": contender_name,
         "score": round(float(best_score), 2)
-    }
+    })
 
-    # print(f"- Ended training with score {best_score}")
+    print(f"- Ended training with score {best_score}")
 
     # PPO_contenders.append({"model": best_model, "score": best_score})
     # return {"model": best_model, "score": best_score}
