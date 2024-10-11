@@ -23,7 +23,7 @@ def main():
     run_folder_name = "runs/" + run_start_time.strftime('%Y-%m-%d-%H-%M-%S')
 
     # multiprocessing.set_start_method('spawn', force=True)
-    multiprocessing_cores = 16
+    multiprocessing_cores = multiprocessing.cpu_count() - 1
 
     # Backtest
     starting_month = dt.date(year=2016, month=1, day=1)
