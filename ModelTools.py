@@ -11,13 +11,19 @@ from stable_baselines3.common.logger import Figure
 import json
 import csv
 import math
+import os
+
+def make_dir(name):
+    os.makedirs(name, exist_ok=True)
+    os.chmod(name, 0o755)
 
 def read_history_from_file(name):
-    return pd.read_csv("history/" + name + ".csv", parse_dates=['timestamp'], index_col='timestamp')
+    return pd.read_csv(name + ".csv", parse_dates=['timestamp'], index_col='timestamp')
 
 def write_history_to_file(history, name="test"):
-    history.to_csv("history/" + name + ".csv")
+    history.to_csv(name + ".csv")
 
+# TODO: fix this, returns are 0
 def get_stats_from_history(history):
     trading_days_per_year = 252 # estimate
     trading_minutes_per_year = trading_days_per_year * 540 # 540 minutes from 7 am to 4pm
@@ -37,9 +43,9 @@ def get_stats_from_history(history):
     max_drawdown = drawdown.min()
     
     print(f"Cumulative return: {cumulative_return * 100:.2f}%")
-    print(f"Annual return: {annual_volatility * 100:.2f}%")
-    print(f"Annual volatility: {annual_return * 100:.2f}%")
-    print(f"Sharpe ratio: {sharpe_ratio}")
+    # print(f"Annual return: {annual_volatility * 100:.2f}%")
+    # print(f"Annual volatility: {annual_return * 100:.2f}%")
+    # print(f"Sharpe ratio: {sharpe_ratio}")
     print(f"Max drawdown: {max_drawdown * 100:.2f}%")
 
 def plot_history(history):
@@ -85,14 +91,14 @@ def test_model(model, test_data, starting_cash = 10000000):
     return pd.DataFrame(history, index=test_data.index)
 
 
-def train_PPO(train_data, test_data, training_rounds_per_contender, PPO_contenders = []):
+def train_PPO(train_data, test_data, training_rounds_per_contender, contender_name, results):
 
     train_env = Monitor(TradingEnv(train_data))
     model = PPO("MlpPolicy", train_env, verbose=0)
     best_model = model
     best_score = 0
 
-    print("Started Training a model")
+    # print("Started Training a model")
     
     for i in range(training_rounds_per_contender):
 
@@ -102,10 +108,14 @@ def train_PPO(train_data, test_data, training_rounds_per_contender, PPO_contende
             best_model = model
             best_score = score
 
-        print(f"- Ended training round {i + 1}/{training_rounds_per_contender} with score {score:.2f}")
+        # print(f"- Ended training round {i + 1}/{training_rounds_per_contender} with score {score:.2f}")
 
+    best_model.save(contender_name)
+    results[contender_name] = {
+        "score": round(float(best_score), 2)
+    }
 
-    print(f"- Ended training with score {best_score:.2f}")
+    # print(f"- Ended training with score {best_score}")
 
-    PPO_contenders.append({"model": best_model, "score": best_score})
-    return {"model": best_model, "score": best_score}
+    # PPO_contenders.append({"model": best_model, "score": best_score})
+    # return {"model": best_model, "score": best_score}
