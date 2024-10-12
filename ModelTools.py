@@ -11,7 +11,20 @@ from stable_baselines3.common.logger import Figure
 import json
 import csv
 import math
+import random
+import numpy as np
+import torch
 import os
+
+def combine_trade_window_histories(run_folder_name):
+
+    combined_history = pd.DataFrame()
+
+    for dir in [d for d in os.listdir(f"{run_folder_name}") if "20" in d]:
+        combined_history = pd.concat([combined_history, read_history_from_file(f"{run_folder_name}/{dir}/trade_window_history")])
+
+    write_history_to_file(combined_history, f"{run_folder_name}/run_history")
+    return combined_history
 
 def make_dir(name):
     os.makedirs(name, exist_ok=True)
@@ -91,14 +104,22 @@ def test_model(model, test_data, starting_cash = 10000000):
     return pd.DataFrame(history, index=test_data.index)
 
 
-def train_PPO(seed, train_data, test_data, training_rounds_per_contender, contender_name, PPO_Contenders):
+def train_PPO(seed, train_data, test_data, training_rounds_per_contender, contender_name, PPO_Contenders, ent_coef):
+
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = False
+    torch.backends.cudnn.benchmark = True
 
     train_env = Monitor(TradingEnv(train_data))
-    model = PPO("MlpPolicy", train_env, verbose=0, seed=seed)
+    model = PPO("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=ent_coef)
     best_model = model
     best_score = 0
 
-    print("Started Training a model")
+    print("Started training a model")
     
     for i in range(training_rounds_per_contender):
 

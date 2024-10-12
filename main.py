@@ -30,9 +30,10 @@ def main():
     train_months = 1
     validation_months = 1
     trade_months = 1
-    num_contenders = 2
-    training_rounds_per_contender = 2
+    num_contenders = 4
+    training_rounds_per_contender = 4
     starting_cash = 10000000
+    ent_coef = 0.01
 
     # ---------------------------------
 
@@ -88,7 +89,7 @@ def main():
         PPO_Contenders = manager.list()
         for i in range(int(num_contenders)):
             contender_name = f"{trade_window_folder_name}/models/{i}"
-            p = multiprocessing.Process(target=ModelTools.train_PPO, args=(random.random() * 100000, train_data, test_data, training_rounds_per_contender, contender_name, PPO_Contenders))
+            p = multiprocessing.Process(target=ModelTools.train_PPO, args=(int(random.random() * 100000), train_data, test_data, training_rounds_per_contender, contender_name, PPO_Contenders, ent_coef))
             p.start()
             processes.append(p)
 
@@ -108,18 +109,18 @@ def main():
             print(p)
 
         # Get best PPO contender and trade with them
-        print(f"\nStarting Trading with model with score {PPO_Contenders[0]['score']:.2f}")
-        run_history = ModelTools.test_model(PPO.load(PPO_Contenders[0]['model']), trade_data, cash)
-        ModelTools.write_history_to_file(run_history, f"{trade_window_folder_name}/run_history.csv")
-        # history = pd.concat([history, new_history])
+        print(f"\nStarting trading with model with score {PPO_Contenders[0]['score']:.2f}")
+        trade_window_history = ModelTools.test_model(PPO.load(PPO_Contenders[0]['model']), trade_data, cash)
+        ModelTools.write_history_to_file(trade_window_history, f"{trade_window_folder_name}/trade_window_history")
 
         # Update running balance
-        cash = run_history.iloc[-1]['portfolio_value'] # Assume bot sells off all stocks at end of 3 month period
-        print(f"- Finished Trading, new running cash total: {cash:.2f}\n\n\n")
+        cash = trade_window_history.iloc[-1]['portfolio_value'] # Assume bot sells off all stocks at end of 3 month period
+        print(f"- Finished trading, new running cash total: {cash:.2f}\n\n\n")
 
-    # ModelTools.get_stats_from_history(history)
-    # ModelTools.write_history_to_file(history, f"{run_folder_name}/result")
-    # ModelTools.plot_history(history)
+    combined_history = ModelTools.combine_trade_window_histories(run_folder_name)
+
+    ModelTools.get_stats_from_history(combined_history)
+    ModelTools.plot_history(combined_history)
 
 if __name__ == "__main__":
     main()
