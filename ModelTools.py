@@ -91,10 +91,10 @@ def test_model(model, test_data, starting_cash = 10000000):
     return pd.DataFrame(history, index=test_data.index)
 
 
-def train_PPO(train_data, test_data, training_rounds_per_contender, contender_name, PPO_Contenders):
+def train_PPO(seed, train_data, test_data, training_rounds_per_contender, contender_name, PPO_Contenders):
 
     train_env = Monitor(TradingEnv(train_data))
-    model = PPO("MlpPolicy", train_env, verbose=0)
+    model = PPO("MlpPolicy", train_env, verbose=0, seed=seed)
     best_model = model
     best_score = 0
 
