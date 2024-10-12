@@ -10,6 +10,7 @@ import multiprocessing
 import os
 from ModelTools import make_dir
 import sys
+import random
 
 def main():
 
@@ -87,7 +88,7 @@ def main():
         PPO_Contenders = manager.list()
         for i in range(int(num_contenders)):
             contender_name = f"{trade_window_folder_name}/models/{i}"
-            p = multiprocessing.Process(target=ModelTools.train_PPO, args=(i, train_data, test_data, training_rounds_per_contender, contender_name, PPO_Contenders))
+            p = multiprocessing.Process(target=ModelTools.train_PPO, args=(random.random() * 100000, train_data, test_data, training_rounds_per_contender, contender_name, PPO_Contenders))
             p.start()
             processes.append(p)
 
