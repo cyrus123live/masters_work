@@ -30,8 +30,8 @@ def main():
     train_months = 1
     validation_months = 1
     trade_months = 1
-    num_contenders = 4
-    training_rounds_per_contender = 4
+    num_contenders = 1
+    training_rounds_per_contender = 1
     starting_cash = 10000000
     ent_coef = 0.01
 
