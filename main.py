@@ -11,6 +11,7 @@ import os
 from ModelTools import make_dir
 import sys
 import random
+import json
 
 def main():
 
@@ -25,13 +26,13 @@ def main():
 
     # Backtest
     starting_month = dt.date(year=2016, month=1, day=1)
-    ending_month = dt.date(year=2017, month=1, day=1)
+    ending_month = dt.date(year=2020, month=7, day=1)
 
     train_months = 3
     validation_months = 3
     trade_months = 3
     num_contenders = 12
-    training_rounds_per_contender = 5
+    training_rounds_per_contender = 15
     starting_cash = 10000000
     ent_coef = 0.01
 
@@ -42,6 +43,19 @@ def main():
 
     run_start_time = dt.datetime.now()
     run_folder_name = "runs/" + run_start_time.strftime('%Y-%m-%d-%H-%M-%S')
+    ModelTools.make_dir(run_folder_name)
+    with open(f"{run_folder_name}/parameters.json", 'w') as f:
+        json.dump({
+            "starting_month": starting_month.strftime('%Y-%m-%d'),
+            "ending_month": ending_month.strftime('%Y-%m-%d'),
+            "train_months": train_months,
+            "validation_months": validation_months,
+            "trade_months": trade_months,
+            "num_contenders": num_contenders,
+            "training_rounds_per_contender": training_rounds_per_contender,
+            "starting_cash": starting_cash,
+            "ent_coef": ent_coef
+        }, f)
 
     multiprocessing.set_start_method('spawn')
     manager = multiprocessing.Manager()
@@ -119,8 +133,7 @@ def main():
 
     combined_history = ModelTools.combine_trade_window_histories(run_folder_name)
 
-    ModelTools.get_stats_from_history(combined_history)
-    ModelTools.plot_history(combined_history)
+    ModelTools.print_stats_from_history(combined_history)
 
 if __name__ == "__main__":
     main()

@@ -16,6 +16,17 @@ import numpy as np
 import torch
 import os
 
+
+def print_parameters(run_folder_name):
+    try:
+        print("\nParameters:\n")
+        with open(f"{run_folder_name}/parameters.json", 'r') as f:
+            print(json.dumps(json.loads(f.read()), indent=1))
+        print("\n")
+    except Exception as e:
+        print("Parameters File not found")
+
+
 def combine_trade_window_histories(run_folder_name):
 
     combined_history = pd.DataFrame()
@@ -39,8 +50,7 @@ def read_history_from_file(name):
 def write_history_to_file(history, name="test"):
     history.to_csv(name + ".csv")
 
-# TODO: fix this, returns are 0
-def get_stats_from_history(history):
+def print_stats_from_history(history):
     trading_days_per_year = 252 # estimate
     trading_minutes_per_year = trading_days_per_year * 540 # 540 minutes from 7 am to 4pm
     number_of_years = (history.index[-1] - history.index[0]).days / trading_days_per_year
@@ -57,12 +67,16 @@ def get_stats_from_history(history):
     rolling_max = history['portfolio_value'].cummax()
     drawdown = (history['portfolio_value'] - rolling_max) / rolling_max
     max_drawdown = drawdown.min()
+
+    print("\nRun Statistics:\n")
     
     print(f"Cumulative return: {cumulative_return * 100:.2f}%")
     # print(f"Annual return: {annual_volatility * 100:.2f}%")
     # print(f"Annual volatility: {annual_return * 100:.2f}%")
     # print(f"Sharpe ratio: {sharpe_ratio}")
     print(f"Max drawdown: {max_drawdown * 100:.2f}%")
+
+    print("\n")
 
 def plot_history(history):
     to_plot = pd.DataFrame(index=history.index)
