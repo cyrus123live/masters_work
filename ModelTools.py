@@ -20,8 +20,11 @@ def combine_trade_window_histories(run_folder_name):
 
     combined_history = pd.DataFrame()
 
-    for dir in [d for d in os.listdir(f"{run_folder_name}") if "20" in d]:
-        combined_history = pd.concat([combined_history, read_history_from_file(f"{run_folder_name}/{dir}/trade_window_history")])
+    folders = [d for d in os.listdir(f"{run_folder_name}") if "20" in d]
+    folders.sort(key=lambda x: (int(x.split("-")[0]), int(x.split("-")[1])))
+
+    for f in folders:
+        combined_history = pd.concat([combined_history, read_history_from_file(f"{run_folder_name}/{f}/trade_window_history")])
 
     write_history_to_file(combined_history, f"{run_folder_name}/run_history")
     return combined_history

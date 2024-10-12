@@ -25,13 +25,13 @@ def main():
 
     # Backtest
     starting_month = dt.date(year=2016, month=1, day=1)
-    ending_month = dt.date(year=2016, month=2, day=1)
+    ending_month = dt.date(year=2017, month=1, day=1)
 
-    train_months = 1
-    validation_months = 1
-    trade_months = 1
-    num_contenders = 1
-    training_rounds_per_contender = 1
+    train_months = 3
+    validation_months = 3
+    trade_months = 3
+    num_contenders = 12
+    training_rounds_per_contender = 5
     starting_cash = 10000000
     ent_coef = 0.01
 
@@ -81,7 +81,7 @@ def main():
         trade_window_folder_name = f"{run_folder_name}/{trade_window_start.strftime('%Y-%m-%d')}"
         make_dir(trade_window_folder_name + "/models")
 
-        print(f"Finished initializing, beginning to train contenders.\n\n")
+        print(f"Finished initializing, beginning to train contenders.\n")
         training_start_time = dt.datetime.now()
 
         # Train our PPO contenders using multiprocessing 
