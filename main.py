@@ -41,6 +41,7 @@ def main():
     run_start_time = dt.datetime.now()
     run_folder_name = "runs/" + run_start_time.strftime('%Y-%m-%d-%H-%M-%S')
 
+    multiprocessing.set_start_method('spawn')
     manager = multiprocessing.Manager()
     multiprocessing_cores = multiprocessing.cpu_count() - 1
     if len(sys.argv) > 1:
@@ -108,7 +109,7 @@ def main():
         # Get best PPO contender and trade with them
         print(f"\nStarting Trading with model with score {PPO_Contenders[0]['score']:.2f}")
         run_history = ModelTools.test_model(PPO.load(PPO_Contenders[0]['model']), trade_data, cash)
-        ModelTools.write_history_to_file(run_history, f"{trade_window_folder_name}")
+        ModelTools.write_history_to_file(run_history, f"{trade_window_folder_name}/run_history.csv")
         # history = pd.concat([history, new_history])
 
         # Update running balance
