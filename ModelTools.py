@@ -17,9 +17,6 @@ import numpy as np
 import torch
 import os
 
-def print_out(s):
-    with 
-
 
 def print_parameters(run_folder_name):
     try:
