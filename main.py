@@ -22,6 +22,12 @@ def main():
     - Trade 3-0 months ago with best from training
     '''
 
+    multiprocessing.set_start_method('spawn')
+    manager = multiprocessing.Manager()
+    multiprocessing_cores = multiprocessing.cpu_count() - 1
+    if len(sys.argv) > 1:
+        multiprocessing_cores = int(sys.argv[1])
+
     # Parameters ---------------------
 
     # Backtest
@@ -31,8 +37,8 @@ def main():
     train_months = 3
     validation_months = 3
     trade_months = 3
-    num_PPO_contenders = 31
-    num_A2C_contenders = 31
+    num_PPO_contenders = multiprocessing_cores
+    num_A2C_contenders = multiprocessing_cores
     training_rounds_per_contender = 2
     starting_cash = 1000000
     ent_coef = 0.01
@@ -58,12 +64,6 @@ def main():
             "starting_cash": starting_cash,
             "ent_coef": ent_coef
         }, f)
-
-    multiprocessing.set_start_method('spawn')
-    manager = multiprocessing.Manager()
-    multiprocessing_cores = multiprocessing.cpu_count() - 1
-    if len(sys.argv) > 1:
-        multiprocessing_cores = int(sys.argv[1])
 
     # Main Loop
     total_months = math.ceil((ending_month - starting_month).days / 30.44)
@@ -103,19 +103,13 @@ def main():
         # Train our PPO contenders using multiprocessing 
         processes = []
         contenders = manager.list()
-        for i in range(int(num_PPO_contenders)):
-            contender_name = f"{trade_window_folder_name}/models/PPO_{i}"
-            p = multiprocessing.Process(target=ModelTools.train_PPO, args=(int(random.random() * 100000), train_data, test_data, training_rounds_per_contender, contender_name, contenders, ent_coef))
-            p.start()
-            processes.append(p)
-
-            if len(processes) >= multiprocessing_cores:
-                for p in processes:
-                    p.join()
-                processes = []
-        for i in range(int(num_A2C_contenders)):
-            contender_name = f"{trade_window_folder_name}/models/A2C_{i}"
-            p = multiprocessing.Process(target=ModelTools.train_A2C, args=(int(random.random() * 100000), train_data, test_data, training_rounds_per_contender, contender_name, contenders, ent_coef))
+        for i in range(int(num_PPO_contenders) + int(num_A2C_contenders)):
+            if i < int(num_PPO_contenders):
+                contender_name = f"{trade_window_folder_name}/models/A2C_{i}"
+                p = multiprocessing.Process(target=ModelTools.train_A2C, args=(int(random.random() * 100000), train_data, test_data, training_rounds_per_contender, contender_name, contenders, ent_coef))
+            else:
+                contender_name = f"{trade_window_folder_name}/models/PPO_{i}"
+                p = multiprocessing.Process(target=ModelTools.train_PPO, args=(int(random.random() * 100000), train_data, test_data, training_rounds_per_contender, contender_name, contenders, ent_coef))
             p.start()
             processes.append(p)
 
