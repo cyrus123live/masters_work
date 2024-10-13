@@ -30,24 +30,25 @@ def main():
 
     # Parameters ---------------------
 
-    # Backtest
     starting_month = dt.date(year=2016, month=1, day=1)
     ending_month = dt.date(year=2020, month=6, day=1)
+    # starting_month = dt.date(year=2024, month=1, day=1)
+    # ending_month = dt.date(year=2024, month=8, day=1)
 
-    train_months = 3
+    train_months = 12
     validation_months = 3
-    trade_months = 3
-    num_PPO_contenders = multiprocessing_cores
-    num_A2C_contenders = multiprocessing_cores
-    training_rounds_per_contender = 2
+    trade_months = 54
+    num_PPO_contenders = 24
+    num_A2C_contenders = 0
+    training_rounds_per_contender = 5
     starting_cash = 1000000
     ent_coef = 0.01
 
     # ---------------------------------
 
     cash = starting_cash
-    # history = pd.DataFrame()
 
+    # Instatiate run folder and parameters file
     run_start_time = dt.datetime.now()
     run_folder_name = "runs/" + run_start_time.strftime('%Y-%m-%d-%H-%M-%S')
     ModelTools.make_dir(run_folder_name)
@@ -76,7 +77,6 @@ def main():
         validation_window_end = trade_window_start - pd.DateOffset(days=1)
         trade_window_end = trade_window_start + pd.DateOffset(months=trade_months) - pd.DateOffset(days=1)
         
-
         # Printout dates
         print(f"\nStarting round with trading window [{trade_window_start.strftime('%Y-%m-%d')}, {trade_window_end.strftime('%Y-%m-%d')}],")
         if validation_months == 0:
@@ -103,8 +103,8 @@ def main():
         # Train our PPO contenders using multiprocessing 
         processes = []
         contenders = manager.list()
-        for i in range(int(num_PPO_contenders) + int(num_A2C_contenders)):
-            if i < int(num_PPO_contenders):
+        for i in range(int(num_A2C_contenders) + int(num_PPO_contenders)):
+            if i < int(num_A2C_contenders):
                 contender_name = f"{trade_window_folder_name}/models/A2C_{i}"
                 p = multiprocessing.Process(target=ModelTools.train_A2C, args=(int(random.random() * 100000), train_data, test_data, training_rounds_per_contender, contender_name, contenders, ent_coef))
             else:

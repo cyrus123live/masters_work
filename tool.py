@@ -2,7 +2,10 @@ import ModelTools
 import sys
 
 # run_directory = 'runs/2024-10-11-22-08-51'
-run_directory = 'runs/2024-10-12-00-10-18' # Ensemble window run, 12 contenders with 5 training rounds each
+# run_directory = 'runs/2024-10-12-00-10-18' # Ensemble window run, 12 contenders with 5 training rounds each
+# run_directory = 'runs/2024-10-12-19-45-01' # 2.75 half a2c half PPO
+# run_directory = 'runs/2024-10-13-01-53-43' # Baseline one PPO one round 
+run_directory = 'runs/2024-10-13-11-23-15' # 24 PPO's take on 2024
 
 if len(sys.argv) > 1:
     run_directory = sys.argv[1]

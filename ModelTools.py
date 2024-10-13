@@ -17,12 +17,18 @@ import numpy as np
 import torch
 import os
 
+def print_out(s):
+    with 
+
 
 def print_parameters(run_folder_name):
     try:
         print("\nParameters:\n")
         with open(f"{run_folder_name}/parameters.json", 'r') as f:
-            print(json.dumps(json.loads(f.read()), indent=1))
+            # print(json.dumps(json.loads(f.read()), indent=1))
+            data = json.loads(f.read())
+        for d in data:
+            print(f"{d}: {data[d]}")
         print("\n")
     except Exception as e:
         print("Parameters File not found")
@@ -51,41 +57,69 @@ def read_history_from_file(name):
 def write_history_to_file(history, name="test"):
     history.to_csv(name + ".csv")
 
-def print_stats_from_history(history):
 
-    history = history
+def get_cumulative_and_annual_returns(history, col):
+
+    num_years = (history.index[-1].year - history.index[0].year + ((history.index[-1].month + 1) / 12) - (history.index[0].month / 12))
+
+    cumulative_return = history.iloc[-1][col] / history.iloc[0][col] - 1
+    annual_return = math.pow(1 + cumulative_return, (1/num_years)) - 1
+
+    return cumulative_return, annual_return
+
+
+def get_sharpe_and_volatility(history, col):
 
     # Plus one to last month because it ends at last day
     # num_years = (history.index[-1] - history.index[0]).days / 365.25 # by the day
     num_years = (history.index[-1].year - history.index[0].year + ((history.index[-1].month + 1) / 12) - (history.index[0].month / 12))
     trading_minutes_per_year = history.shape[0] / num_years
 
-    history['returns'] = history['portfolio_value'].pct_change(1)
+    history = history
+    history['returns'] = history[col].pct_change(1)
     mean_return = history['returns'].mean()
     std_return = history['returns'].std()
 
     history.dropna(inplace=True)
 
-    cumulative_return = history.iloc[-1]['portfolio_value'] / history.iloc[0]['portfolio_value'] - 1
-    stock_return = history.iloc[-1]['close'] / history.iloc[0]['close'] - 1
-    annual_return = math.pow(1 + cumulative_return, (1/num_years)) - 1
-    annual_volatility = std_return * np.sqrt(trading_minutes_per_year)
-    sharpe_ratio = (mean_return / std_return) * np.sqrt(trading_minutes_per_year)
+    sharpe = (mean_return / std_return) * np.sqrt(trading_minutes_per_year)
+    volatility = std_return * np.sqrt(trading_minutes_per_year)
 
-    rolling_max = history['portfolio_value'].cummax()
-    drawdown = (history['portfolio_value'] - rolling_max) / rolling_max
-    max_drawdown = drawdown.min()
+    return sharpe, volatility
 
-    history.dropna(inplace=True)
 
-    print(f"\nRun Statistics for run [{history.index[0]}, {history.index[-1]}] ({num_years} years):\n")
+def get_max_drawdown(history, col):
+
+    rolling_max = history[col].cummax()
+    drawdown = (history[col] - rolling_max) / rolling_max
+    return drawdown.min()
+
+
+def print_stats_from_history(history):
+
+    print(f"\nRun Statistics for run [{history.index[0]}, {history.index[-1]}]:\n")
     
-    print(f"Buy and Hold Strategy return: {stock_return * 100:.2f}%")
-    print(f"Cumulative return: {cumulative_return * 100:.2f}%")
-    print(f"Annual return: {annual_return * 100:.2f}%")
-    print(f"Annual volatility: {annual_volatility * 100:.2f}%")
-    print(f"Sharpe ratio: {sharpe_ratio}")
-    print(f"Max drawdown: {max_drawdown * 100:.2f}%")
+    sharpe, volatility = get_sharpe_and_volatility(history, 'close')
+    cumulative, annual = get_cumulative_and_annual_returns(history, 'close')
+    max_drawdown = get_max_drawdown(history, 'close')
+
+    print(f"Buy and Hold Strategy:\n")
+    print(f"- Cumulative return: {cumulative * 100:.2f}%")
+    print(f"- Annual return: {annual * 100:.2f}%")
+    print(f"- Annual volatility: {volatility * 100:.2f}%")
+    print(f"- Sharpe ratio: {sharpe:.2f}")
+    print(f"- Max drawdown: {max_drawdown * 100:.2f}%")
+    
+    sharpe, volatility = get_sharpe_and_volatility(history, 'portfolio_value')
+    cumulative, annual = get_cumulative_and_annual_returns(history, 'portfolio_value')
+    max_drawdown = get_max_drawdown(history, 'portfolio_value')
+
+    print(f"\n\nTest Strategy:\n")
+    print(f"- Cumulative return: {cumulative * 100:.2f}%")
+    print(f"- Annual return: {annual * 100:.2f}%")
+    print(f"- Annual volatility: {volatility * 100:.2f}%")
+    print(f"- Sharpe ratio: {sharpe:.2f}")
+    print(f"- Max drawdown: {max_drawdown * 100:.2f}%")
 
     print("\n")
 
