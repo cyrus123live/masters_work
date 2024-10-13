@@ -25,16 +25,14 @@ def main():
     # Parameters ---------------------
 
     # Backtest
-    # starting_month = dt.date(year=2016, month=1, day=1)
-    # ending_month = dt.date(year=2020, month=5, day=1)
     starting_month = dt.date(year=2016, month=1, day=1)
-    ending_month = dt.date(year=2016, month=3, day=1)
+    ending_month = dt.date(year=2020, month=6, day=1)
 
     train_months = 3
     validation_months = 3
     trade_months = 3
-    num_PPO_contenders = 2
-    num_A2C_contenders = 2
+    num_PPO_contenders = 31
+    num_A2C_contenders = 31
     training_rounds_per_contender = 2
     starting_cash = 1000000
     ent_coef = 0.01

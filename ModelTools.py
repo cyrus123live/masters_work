@@ -58,7 +58,6 @@ def print_stats_from_history(history):
     # Plus one to last month because it ends at last day
     # num_years = (history.index[-1] - history.index[0]).days / 365.25 # by the day
     num_years = (history.index[-1].year - history.index[0].year + ((history.index[-1].month + 1) / 12) - (history.index[0].month / 12))
-    print(num_years)
     trading_minutes_per_year = history.shape[0] / num_years
 
     history['returns'] = history['portfolio_value'].pct_change(1)
@@ -79,7 +78,7 @@ def print_stats_from_history(history):
 
     history.dropna(inplace=True)
 
-    print(f"\n\nRun Statistics for run [{history.index[0]}, {history.index[-1]}]:\n")
+    print(f"\nRun Statistics for run [{history.index[0]}, {history.index[-1]}] ({num_years} years):\n")
     
     print(f"Buy and Hold Strategy return: {stock_return * 100:.2f}%")
     print(f"Cumulative return: {cumulative_return * 100:.2f}%")
