@@ -71,6 +71,8 @@ def main():
     total_months = math.ceil((ending_month - starting_month).days / 30.44)
     for trade_window_start in [starting_month + pd.DateOffset(months=i) for i in range(0, total_months, trade_months)]:
 
+        trade_window_start_time = dt.datetime.now()
+
         # Figure out monthly windows for trading, testing, and training
         train_window_start = trade_window_start - pd.DateOffset(months=validation_months + train_months)
         train_window_end = trade_window_start - pd.DateOffset(months=validation_months, days=1)
@@ -137,9 +139,13 @@ def main():
 
         # Update running balance
         cash = trade_window_history.iloc[-1]['portfolio_value'] # Assume bot sells off all stocks at end of 3 month period
-        logger.print_out(f"- Finished trading, new running cash total: {cash:.2f}\n\n\n")
+        logger.print_out(f"- Finished trading, new running cash total: {cash:.2f}")
+
+        logger.print_out(f"\nFinished date window, total time: {(dt.datetime.now() - trade_window_start).seconds} seconds.\n\n")
 
     combined_history = ModelTools.combine_trade_window_histories(run_folder_name)
+
+    logger.print_out(f"\nFinished run in {(dt.datetime.now() - run_start_time).seconds} seconds.\n")
 
     ModelTools.print_stats_from_history(combined_history)
 
