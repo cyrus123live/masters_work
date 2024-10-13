@@ -17,6 +17,15 @@ import numpy as np
 import torch
 import os
 
+class Logger():
+    def __init__(self, run_folder_name):
+        self.run_folder_name = run_folder_name
+
+    def print_out(self, s):
+        print(s)
+        with open(f"{self.run_folder_name}/run.log", 'a') as f:
+            f.write(str(s) + "\n")
+        
 
 def print_parameters(run_folder_name):
     try:
@@ -163,20 +172,18 @@ def test_model(model, test_data, starting_cash = 1000000):
     return pd.DataFrame(history, index=test_data.index)
 
 
-def train_A2C(seed, train_data, test_data, training_rounds_per_contender, contender_name, contenders, ent_coef):
+def train(model_type, seed, train_data, test_data, training_rounds_per_contender, contender_name, contenders, ent_coef, logger):
 
-    train_env = Monitor(TradingEnv(train_data))
+    if model_type == "A2C":
+        train_env = Monitor(TradingEnv(train_data))
+        model = A2C("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=ent_coef)
+    else:
+        train_env = Monitor(TradingEnv(train_data))
+        model = PPO("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=ent_coef)
 
-    return train_model(A2C("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=ent_coef), seed, train_data, test_data, training_rounds_per_contender, contender_name, contenders)
+    return train_model(model, seed, train_data, test_data, training_rounds_per_contender, contender_name, contenders, logger)
 
-def train_PPO(seed, train_data, test_data, training_rounds_per_contender, contender_name, contenders, ent_coef):
-
-    train_env = Monitor(TradingEnv(train_data))
-
-    return train_model(PPO("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=ent_coef), seed, train_data, test_data, training_rounds_per_contender, contender_name, contenders)
-
-
-def train_model(model, seed, train_data, test_data, training_rounds_per_contender, contender_name, contenders):
+def train_model(model, seed, train_data, test_data, training_rounds_per_contender, contender_name, contenders, logger):
 
     random.seed(seed)
     np.random.seed(seed)
@@ -191,7 +198,7 @@ def train_model(model, seed, train_data, test_data, training_rounds_per_contende
     best_model = model
     best_score = 0
 
-    print("Started training a model")
+    logger.print_out("Started training a model")
     
     for i in range(training_rounds_per_contender):
 
@@ -201,7 +208,7 @@ def train_model(model, seed, train_data, test_data, training_rounds_per_contende
             best_model = model
             best_score = score
 
-        # print(f"    - Ended training round {i + 1}/{training_rounds_per_contender} with score {score:.2f}")
+        # logger.print_out(f"    - Ended training round {i + 1}/{training_rounds_per_contender} with score {score:.2f}")
 
     best_model.save(contender_name)
     contenders.append({
@@ -209,4 +216,4 @@ def train_model(model, seed, train_data, test_data, training_rounds_per_contende
         "score": round(float(best_score), 2)
     })
 
-    print(f"- Ended training with score {best_score}")
+    logger.print_out(f"- Ended training with score {best_score}")
