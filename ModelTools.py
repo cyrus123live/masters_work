@@ -1,4 +1,5 @@
 from stable_baselines3 import PPO
+from stable_baselines3 import A2C
 from TradingEnv import TradingEnv
 import numpy as np
 import matplotlib.pyplot as plt 
@@ -51,16 +52,24 @@ def write_history_to_file(history, name="test"):
     history.to_csv(name + ".csv")
 
 def print_stats_from_history(history):
-    trading_days_per_year = 252 # estimate
-    trading_minutes_per_year = trading_days_per_year * 540 # 540 minutes from 7 am to 4pm
-    number_of_years = (history.index[-1] - history.index[0]).days / trading_days_per_year
 
-    history['returns'] = np.log(history['portfolio_value'] / history['portfolio_value'].shift(1))
+    history = history
+
+    # Plus one to last month because it ends at last day
+    # num_years = (history.index[-1] - history.index[0]).days / 365.25 # by the day
+    num_years = (history.index[-1].year - history.index[0].year + ((history.index[-1].month + 1) / 12) - (history.index[0].month / 12))
+    print(num_years)
+    trading_minutes_per_year = history.shape[0] / num_years
+
+    history['returns'] = history['portfolio_value'].pct_change(1)
     mean_return = history['returns'].mean()
     std_return = history['returns'].std()
 
+    history.dropna(inplace=True)
+
     cumulative_return = history.iloc[-1]['portfolio_value'] / history.iloc[0]['portfolio_value'] - 1
-    annual_return = math.pow(1 + cumulative_return, (1/number_of_years)) - 1
+    stock_return = history.iloc[-1]['close'] / history.iloc[0]['close'] - 1
+    annual_return = math.pow(1 + cumulative_return, (1/num_years)) - 1
     annual_volatility = std_return * np.sqrt(trading_minutes_per_year)
     sharpe_ratio = (mean_return / std_return) * np.sqrt(trading_minutes_per_year)
 
@@ -68,12 +77,15 @@ def print_stats_from_history(history):
     drawdown = (history['portfolio_value'] - rolling_max) / rolling_max
     max_drawdown = drawdown.min()
 
-    print("\nRun Statistics:\n")
+    history.dropna(inplace=True)
+
+    print(f"\n\nRun Statistics for run [{history.index[0]}, {history.index[-1]}]:\n")
     
+    print(f"Buy and Hold Strategy return: {stock_return * 100:.2f}%")
     print(f"Cumulative return: {cumulative_return * 100:.2f}%")
-    # print(f"Annual return: {annual_volatility * 100:.2f}%")
-    # print(f"Annual volatility: {annual_return * 100:.2f}%")
-    # print(f"Sharpe ratio: {sharpe_ratio}")
+    print(f"Annual return: {annual_return * 100:.2f}%")
+    print(f"Annual volatility: {annual_volatility * 100:.2f}%")
+    print(f"Sharpe ratio: {sharpe_ratio}")
     print(f"Max drawdown: {max_drawdown * 100:.2f}%")
 
     print("\n")
@@ -93,7 +105,7 @@ def plot_history(history):
     plt.show()
 
 # Returns a history dataframe
-def test_model(model, test_data, starting_cash = 10000000):
+def test_model(model, test_data, starting_cash = 1000000):
 
     history = []
     k = starting_cash / test_data.iloc[0]["Close"]
@@ -121,7 +133,20 @@ def test_model(model, test_data, starting_cash = 10000000):
     return pd.DataFrame(history, index=test_data.index)
 
 
-def train_PPO(seed, train_data, test_data, training_rounds_per_contender, contender_name, PPO_Contenders, ent_coef):
+def train_A2C(seed, train_data, test_data, training_rounds_per_contender, contender_name, contenders, ent_coef):
+
+    train_env = Monitor(TradingEnv(train_data))
+
+    return train_model(A2C("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=ent_coef), seed, train_data, test_data, training_rounds_per_contender, contender_name, contenders)
+
+def train_PPO(seed, train_data, test_data, training_rounds_per_contender, contender_name, contenders, ent_coef):
+
+    train_env = Monitor(TradingEnv(train_data))
+
+    return train_model(PPO("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=ent_coef), seed, train_data, test_data, training_rounds_per_contender, contender_name, contenders)
+
+
+def train_model(model, seed, train_data, test_data, training_rounds_per_contender, contender_name, contenders):
 
     random.seed(seed)
     np.random.seed(seed)
@@ -132,7 +157,7 @@ def train_PPO(seed, train_data, test_data, training_rounds_per_contender, conten
     torch.backends.cudnn.benchmark = True
 
     train_env = Monitor(TradingEnv(train_data))
-    model = PPO("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=ent_coef)
+    model = model
     best_model = model
     best_score = 0
 
@@ -146,15 +171,12 @@ def train_PPO(seed, train_data, test_data, training_rounds_per_contender, conten
             best_model = model
             best_score = score
 
-        # print(f"- Ended training round {i + 1}/{training_rounds_per_contender} with score {score:.2f}")
+        # print(f"    - Ended training round {i + 1}/{training_rounds_per_contender} with score {score:.2f}")
 
     best_model.save(contender_name)
-    PPO_Contenders.append({
+    contenders.append({
         "model": contender_name,
         "score": round(float(best_score), 2)
     })
 
     print(f"- Ended training with score {best_score}")
-
-    # PPO_contenders.append({"model": best_model, "score": best_score})
-    # return {"model": best_model, "score": best_score}

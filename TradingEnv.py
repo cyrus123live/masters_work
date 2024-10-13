@@ -13,7 +13,7 @@ class TradingEnv(gym.Env):
         self.df = df
         self.reward_range = (-np.inf, np.inf)
 
-        self.starting_cash = 10000000
+        self.starting_cash = 1000000
         self.k = int(self.starting_cash / df['Close'].iloc[0]) # Maximum amount of stocks bought or sold each minute
         
         self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float64)
