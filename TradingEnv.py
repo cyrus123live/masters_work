@@ -69,8 +69,13 @@ class TradingEnv(gym.Env):
 
         elif action[0] < 0 and self.stock > 0: # sell all
 
-            self.cash += self.stock * current_price * (1 - self.c_selling)
-            self.stock = 0
+            to_sell = min(self.stock, self.k * action[0] * -1)
+
+            self.cash += to_sell * (current_price * (1 - self.c_selling))
+            self.stock -= to_sell
+
+            # self.cash += self.stock * current_price * (1 - self.c_selling)
+            # self.stock = 0
 
             self.last_sell_step = self.current_step
             self.last_action = -1 
@@ -89,7 +94,7 @@ class TradingEnv(gym.Env):
         new_total_value = self.cash + self.stock * new_price
 
         # Implementing compounded excess return reward function
-        r_f = 0.000041 / (60*6.5) # rough risk free rate is 1.5% per annum, or 0.000041 per day
+        # r_f = 0.000041 / (60*6.5) # rough risk free rate is 1.5% per annum, or 0.000041 per day
 
         self.r_bh += math.log(self.df.iloc[self.current_step]["Close"]) - math.log(self.df.iloc[self.current_step - 1]["Close"])
 
@@ -97,7 +102,7 @@ class TradingEnv(gym.Env):
             self.r += math.log(self.df.iloc[self.current_step]["Close"]) - math.log(self.df.iloc[self.current_step - 1]["Close"])
             self.r += math.log(1-self.c_buying)
         elif self.last_action == -1:
-            self.r += r_f
+            # self.r += r_f
             self.r += math.log(1-self.c_selling)
 
         reward = self.r - self.r_bh
