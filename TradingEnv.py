@@ -7,13 +7,13 @@ import math
 class TradingEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, df):
+    def __init__(self, df, starting_cash):
         super(TradingEnv, self).__init__()
 
         self.df = df
         self.reward_range = (-np.inf, np.inf)
 
-        self.starting_cash = 1000000
+        self.starting_cash = starting_cash
         self.k = int(self.starting_cash / df['Close'].iloc[0]) # Maximum amount of stocks bought or sold each minute
         
         self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float64)
@@ -42,7 +42,6 @@ class TradingEnv(gym.Env):
         # current_row = self.df[self.df.filter(regex='_Scaled$').columns].iloc[self.current_step]
         current_row = self.df[["Close_Normalized", "MACD_Normalized", "RSI_Normalized", "CCI_Normalized", "ADX_Normalized"]].iloc[self.current_step]
 
-        # amount_held = float((self.stock * close) / (self.stock * close + self.cash))
         amount_held = self.stock / self.k 
         # amount_held = np.clip(2 * self.stock / self.k - 1, -1, 1)
         
@@ -58,7 +57,6 @@ class TradingEnv(gym.Env):
 
         if action[0] > 0 and self.cash > 0: # buy
 
-            # buyable_stocks = (self.cash) / (current_price * 1.004) 
             buyable_stocks = (self.cash) / (current_price * (1 + self.c_buying)) 
 
             to_buy = min(buyable_stocks, self.k * action[0])
@@ -69,20 +67,13 @@ class TradingEnv(gym.Env):
             self.last_buy_step = self.current_step
             self.last_action = 1
 
-        elif action[0] < 0 and self.stock > 0: # sell
+        elif action[0] < 0 and self.stock > 0: # sell all
 
-            # to_sell = min(self.stock, self.k * action[0] * -1)
-
-            # self.stock -= to_sell
-            # # self.cash += to_sell * (current_price * 0.996)
-            # self.cash += to_sell * current_price
-            # self.last_sell_step = self.current_step
-            # self.last_action = -1
             self.cash += self.stock * current_price * (1 - self.c_selling)
             self.stock = 0
 
             self.last_sell_step = self.current_step
-            self.last_action = -1 # This was commented out before?!
+            self.last_action = -1 
 
         else:
             self.last_action = 0
@@ -110,7 +101,7 @@ class TradingEnv(gym.Env):
             self.r += math.log(1-self.c_selling)
 
         reward = self.r - self.r_bh
-        # reward = new_total_value - self.total_value * (2**-11) # reward scaling taken from https://github.com/AI4Finance-Foundation/FinRL-Meta/blob/master/meta/env_stock_trading/env_stock_trading.py
+        # reward = new_total_value - self.total_value * (2**-11) # this unused reward scaling taken from https://github.com/AI4Finance-Foundation/FinRL-Meta/blob/master/meta/env_stock_trading/env_stock_trading.py
         
         self.total_value = new_total_value
 
@@ -139,4 +130,5 @@ class TradingEnv(gym.Env):
     def render(self, mode='human', close=False):
         if mode == 'human':
             # print(f"Step: {self.current_step}, Total Value: {self.total_value}, Cash: {self.cash}, Stocks: {self.stock}")
-            return {"Portfolio_Value": self.total_value, "Close": self.df['Close'].iloc[self.current_step]}
+            # return {"Portfolio_Value": self.total_value, "Close": self.df['Close'].iloc[self.current_step]}
+            return {"portfolio_value": self.total_value, "close": self.df['Close'].iloc[self.current_step], "cash": self.cash, "held": self.stock}

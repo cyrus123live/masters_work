@@ -32,13 +32,13 @@ def main():
 
     starting_month = dt.date(year=2016, month=1, day=1)
     ending_month = dt.date(year=2016, month=2, day=1)
-    # starting_month = dt.date(year=2024, month=1, day=1)
-    # ending_month = dt.date(year=2024, month=8, day=1)
+    # starting_month = dt.date(year=2016, month=1, day=1)
+    # ending_month = dt.date(year=2020, month=6, day=1)
 
     train_months = 1
     validation_months = 1
     trade_months = 1
-    num_PPO_contenders = 1
+    num_PPO_contenders = 0
     num_A2C_contenders = 1
     training_rounds_per_contender = 2
     starting_cash = 1000000
@@ -110,10 +110,10 @@ def main():
             seed = int(random.random() * 100000)
             if i < int(num_A2C_contenders):
                 contender_name = f"{trade_window_folder_name}/models/A2C_{i}"
-                p = multiprocessing.Process(target=ModelTools.train, args=("A2C", seed, train_data, test_data, training_rounds_per_contender, contender_name, contenders, ent_coef, logger))
+                p = multiprocessing.Process(target=ModelTools.train, args=("A2C", seed, train_data, test_data, starting_cash, training_rounds_per_contender, contender_name, contenders, ent_coef, logger))
             else:
                 contender_name = f"{trade_window_folder_name}/models/PPO_{i}"
-                p = multiprocessing.Process(target=ModelTools.train, args=("PPO", seed, train_data, test_data, training_rounds_per_contender, contender_name, contenders, ent_coef, logger))
+                p = multiprocessing.Process(target=ModelTools.train, args=("PPO", seed, train_data, test_data, starting_cash, training_rounds_per_contender, contender_name, contenders, ent_coef, logger))
             p.start()
             processes.append(p)
 
@@ -141,7 +141,7 @@ def main():
         cash = trade_window_history.iloc[-1]['portfolio_value'] # Assume bot sells off all stocks at end of 3 month period
         logger.print_out(f"- Finished trading, new running cash total: {cash:.2f}")
 
-        logger.print_out(f"\nFinished date window, total time: {(dt.datetime.now() - trade_window_start).seconds} seconds.\n\n")
+        logger.print_out(f"\nFinished date window, total time: {(dt.datetime.now() - trade_window_start_time).seconds} seconds.\n\n")
 
     combined_history = ModelTools.combine_trade_window_histories(run_folder_name)
 

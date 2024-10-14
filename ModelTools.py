@@ -4,6 +4,7 @@ from TradingEnv import TradingEnv
 import numpy as np
 import matplotlib.pyplot as plt 
 import pandas as pd
+import datetime as dt
 import StockData
 import logging
 from stable_baselines3.common.monitor import Monitor
@@ -28,6 +29,7 @@ class Logger():
         
 
 def print_parameters(run_folder_name):
+    print("\nrun " + run_folder_name)
     try:
         print("\nParameters:\n")
         with open(f"{run_folder_name}/parameters.json", 'r') as f:
@@ -139,51 +141,38 @@ def plot_history(history):
 
     p.plot(to_plot['close'], label="Stock Movement")
     p.plot(to_plot['portfolio'], label="Portfolio Value")
+    # [p.axvline(x = i, color = 'b') for i in pd.date_range(history.index[0], history.index[-1], freq='QS')]
     p.legend()
 
     plt.show()
 
-# Returns a history dataframe
+
+# Returns a history dataframe using TradingEnv
 def test_model(model, test_data, starting_cash = 1000000):
 
-    history = []
-    k = starting_cash / test_data.iloc[0]["Close"]
-    cash = starting_cash
-    held = 0
-    for i in range(test_data.shape[0]):
+    test_env = Monitor(TradingEnv(test_data, starting_cash))
+    obs, info = test_env.reset()
+    history = [test_env.render()]
+    for i in range(test_data.shape[0] - 1):
 
-        data = test_data.iloc[i]
-        # obs = np.array(test_data[test_data.filter(regex='_Scaled$').columns].iloc[i].tolist() + [np.clip(2 * held / k - 1, -1, 1), np.clip(2 * cash / starting_cash - 1, -1, 1)])
-        # obs = np.array(test_data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[i].tolist() + [held / k, cash / starting_cash])
-        obs = np.array(test_data[["Close_Normalized", "MACD_Normalized", "RSI_Normalized", "CCI_Normalized", "ADX_Normalized"]].iloc[i].tolist() + [held / k, cash / starting_cash])
-
-        action = model.predict(obs, deterministic=True)[0][0]
-
-        if action < 0:
-            cash += held * data["Close"]
-            held = 0
-        else:
-            to_buy = min(cash / data["Close"], action * k)
-            cash -= to_buy * data["Close"]
-            held += to_buy
-
-        history.append({"portfolio_value": cash + held * data["Close"], "close": data["Close"], "cash": cash, "held": held})
+        action = model.predict(obs, deterministic=True)[0]
+        obs, reward, terminated, truncated, info = test_env.step(action)
+        history.append(test_env.render())
 
     return pd.DataFrame(history, index=test_data.index)
+    
 
+def train(model_type, seed, train_data, test_data, starting_cash, training_rounds_per_contender, contender_name, contenders, ent_coef, logger):
 
-def train(model_type, seed, train_data, test_data, training_rounds_per_contender, contender_name, contenders, ent_coef, logger):
-
+    train_env = Monitor(TradingEnv(train_data, starting_cash))
     if model_type == "A2C":
-        train_env = Monitor(TradingEnv(train_data))
         model = A2C("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=ent_coef)
     else:
-        train_env = Monitor(TradingEnv(train_data))
         model = PPO("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=ent_coef)
 
-    return train_model(model, seed, train_data, test_data, training_rounds_per_contender, contender_name, contenders, logger)
+    return train_model(model, seed, train_data, test_data, starting_cash, training_rounds_per_contender, contender_name, contenders, logger)
 
-def train_model(model, seed, train_data, test_data, training_rounds_per_contender, contender_name, contenders, logger):
+def train_model(model, seed, train_data, test_data, starting_cash, training_rounds_per_contender, contender_name, contenders, logger):
 
     random.seed(seed)
     np.random.seed(seed)
@@ -193,7 +182,6 @@ def train_model(model, seed, train_data, test_data, training_rounds_per_contende
     torch.backends.cudnn.deterministic = False
     torch.backends.cudnn.benchmark = True
 
-    train_env = Monitor(TradingEnv(train_data))
     model = model
     best_model = model
     best_score = 0
