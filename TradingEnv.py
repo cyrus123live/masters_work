@@ -64,18 +64,21 @@ class TradingEnv(gym.Env):
             self.stock += to_buy
             self.cash -= to_buy * current_price * (1 + self.c_buying)
 
+            # self.stock += buyable_stocks
+            # self.cash = 0
+
             self.last_buy_step = self.current_step
             self.last_action = 1
 
         elif action[0] < 0 and self.stock > 0: # sell all
 
-            to_sell = min(self.stock, self.k * action[0] * -1)
+            # to_sell = min(self.stock, self.k * action[0] * -1)
 
-            self.cash += to_sell * (current_price * (1 - self.c_selling))
-            self.stock -= to_sell
+            # self.cash += to_sell * (current_price * (1 - self.c_selling))
+            # self.stock -= to_sell
 
-            # self.cash += self.stock * current_price * (1 - self.c_selling)
-            # self.stock = 0
+            self.cash += self.stock * current_price * (1 - self.c_selling)
+            self.stock = 0
 
             self.last_sell_step = self.current_step
             self.last_action = -1 

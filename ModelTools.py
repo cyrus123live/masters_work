@@ -160,19 +160,9 @@ def test_model(model, test_data, starting_cash = 1000000):
         history.append(test_env.render())
 
     return pd.DataFrame(history, index=test_data.index)
-    
 
-def train(model_type, seed, train_data, test_data, starting_cash, training_rounds_per_contender, contender_name, contenders, ent_coef, logger):
-
-    train_env = Monitor(TradingEnv(train_data, starting_cash))
-    if model_type == "A2C":
-        model = A2C("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=ent_coef)
-    else:
-        model = PPO("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=ent_coef)
-
-    return train_model(model, seed, train_data, test_data, starting_cash, training_rounds_per_contender, contender_name, contenders, logger)
-
-def train_model(model, seed, train_data, test_data, starting_cash, training_rounds_per_contender, contender_name, contenders, logger):
+    # "PPO", seed, train_data, test_data, parameters, contender_name, contenders, logger
+def train(model_type, seed, train_data, test_data, parameters, contender_name, contenders, logger):
 
     random.seed(seed)
     np.random.seed(seed)
@@ -181,6 +171,16 @@ def train_model(model, seed, train_data, test_data, starting_cash, training_roun
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = False
     torch.backends.cudnn.benchmark = True
+
+    train_env = Monitor(TradingEnv(train_data, parameters["starting_cash"]))
+    if model_type == "A2C":
+        model = A2C("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=parameters["ent_coef"])
+    else:
+        model = PPO("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=parameters["ent_coef"])
+
+    return train_model(model, train_data, test_data, parameters["training_rounds_per_contender"], contender_name, contenders, logger)
+
+def train_model(model, train_data, test_data, training_rounds_per_contender, contender_name, contenders, logger):
 
     model = model
     best_model = model

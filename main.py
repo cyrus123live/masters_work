@@ -28,25 +28,20 @@ def main():
     if len(sys.argv) > 1:
         multiprocessing_cores = int(sys.argv[1])
 
-    # Parameters ---------------------
+    parameters = {
+        "starting_month": "2016-1",
+        "ending_month": "2016-2",
+        "train_months": 1,
+        "test_months": 1,
+        "trade_months": 1,
+        "num_ppo": 0,
+        "num_a2c": 1,
+        "training_rounds_per_contender": 3,
+        "starting_cash": 1000000,
+        "ent_coef": 0.01
+    }
 
-    starting_month = dt.date(year=2016, month=1, day=1)
-    ending_month = dt.date(year=2016, month=2, day=1)
-    # starting_month = dt.date(year=2016, month=1, day=1)
-    # ending_month = dt.date(year=2020, month=6, day=1)
-
-    train_months = 1
-    validation_months = 1
-    trade_months = 1
-    num_PPO_contenders = 0
-    num_A2C_contenders = 1
-    training_rounds_per_contender = 2
-    starting_cash = 1000000
-    ent_coef = 0.01
-
-    # ---------------------------------
-
-    cash = starting_cash
+    cash = parameters["starting_cash"]
 
     # Instatiate run folder and parameters file
     run_start_time = dt.datetime.now()
@@ -54,47 +49,38 @@ def main():
     ModelTools.make_dir(run_folder_name)
     logger = ModelTools.Logger(run_folder_name)
     with open(f"{run_folder_name}/parameters.json", 'w') as f:
-        json.dump({
-            "starting_month": starting_month.strftime('%Y-%m-%d'),
-            "ending_month": ending_month.strftime('%Y-%m-%d'),
-            "train_months": train_months,
-            "validation_months": validation_months,
-            "trade_months": trade_months,
-            "num_PPO_contenders": num_PPO_contenders,
-            "num_A2C_contenders": num_A2C_contenders,
-            "training_rounds_per_contender": training_rounds_per_contender,
-            "starting_cash": starting_cash,
-            "ent_coef": ent_coef
-        }, f)
+        json.dump(parameters, f)
 
     # Main Loop
+    starting_month = dt.datetime(year=int(parameters["starting_month"].split("-")[0]), month=int(parameters["starting_month"].split("-")[1]), day=1)
+    ending_month = dt.datetime(year=int(parameters["ending_month"].split("-")[0]), month=int(parameters["ending_month"].split("-")[1]), day=1)
     total_months = math.ceil((ending_month - starting_month).days / 30.44)
-    for trade_window_start in [starting_month + pd.DateOffset(months=i) for i in range(0, total_months, trade_months)]:
+    for trade_window_start in [starting_month + pd.DateOffset(months=i) for i in range(0, total_months, parameters["trade_months"])]:
 
         trade_window_start_time = dt.datetime.now()
 
         # Figure out monthly windows for trading, testing, and training
-        train_window_start = trade_window_start - pd.DateOffset(months=validation_months + train_months)
-        train_window_end = trade_window_start - pd.DateOffset(months=validation_months, days=1)
-        validation_window_start = train_window_start + pd.DateOffset(months=train_months)
+        train_window_start = trade_window_start - pd.DateOffset(months=parameters["test_months"] + parameters["train_months"])
+        train_window_end = trade_window_start - pd.DateOffset(months=parameters["test_months"], days=1)
+        validation_window_start = train_window_start + pd.DateOffset(months=parameters["train_months"])
         validation_window_end = trade_window_start - pd.DateOffset(days=1)
-        trade_window_end = trade_window_start + pd.DateOffset(months=trade_months) - pd.DateOffset(days=1)
+        trade_window_end = trade_window_start + pd.DateOffset(months=parameters["trade_months"]) - pd.DateOffset(days=1)
         
         # Printout dates
         logger.print_out(f"\nStarting round with trading window [{trade_window_start.strftime('%Y-%m-%d')}, {trade_window_end.strftime('%Y-%m-%d')}],")
-        if validation_months == 0:
+        if parameters["test_months"] == 0:
             logger.print_out("Validation window is equal to training window,")
         else:
             logger.print_out(f"Validation window [{validation_window_start.strftime('%Y-%m-%d')}, {validation_window_end.strftime('%Y-%m-%d')}],")
         logger.print_out(f"Training window [{train_window_start.strftime('%Y-%m-%d')}, {train_window_end.strftime('%Y-%m-%d')}]\n")
 
         # Get train, test, and trade data
-        train_data = StockData.get_consecutive_months(starting_month=train_window_start, num_months=train_months)
-        if validation_months == 0:
+        train_data = StockData.get_consecutive_months(starting_month=train_window_start, num_months=parameters["train_months"])
+        if parameters["test_months"] == 0:
             test_data = train_data
         else:
-            test_data = StockData.get_consecutive_months(starting_month=validation_window_start, num_months=validation_months)
-        trade_data = StockData.get_consecutive_months(starting_month=trade_window_start, num_months=trade_months)
+            test_data = StockData.get_consecutive_months(starting_month=validation_window_start, num_months=parameters["test_months"])
+        trade_data = StockData.get_consecutive_months(starting_month=trade_window_start, num_months=parameters["trade_months"])
 
         # Instantiate trade window folder
         trade_window_folder_name = f"{run_folder_name}/{trade_window_start.strftime('%Y-%m-%d')}"
@@ -106,14 +92,14 @@ def main():
         # Train our PPO contenders using multiprocessing 
         processes = []
         contenders = manager.list()
-        for i in range(int(num_A2C_contenders) + int(num_PPO_contenders)):
+        for i in range(int(parameters["num_a2c"]) + int(parameters["num_ppo"])):
             seed = int(random.random() * 100000)
-            if i < int(num_A2C_contenders):
+            if i < int(parameters["num_a2c"]):
                 contender_name = f"{trade_window_folder_name}/models/A2C_{i}"
-                p = multiprocessing.Process(target=ModelTools.train, args=("A2C", seed, train_data, test_data, starting_cash, training_rounds_per_contender, contender_name, contenders, ent_coef, logger))
+                p = multiprocessing.Process(target=ModelTools.train, args=("A2C", seed, train_data, test_data, parameters, contender_name, contenders, logger))
             else:
                 contender_name = f"{trade_window_folder_name}/models/PPO_{i}"
-                p = multiprocessing.Process(target=ModelTools.train, args=("PPO", seed, train_data, test_data, starting_cash, training_rounds_per_contender, contender_name, contenders, ent_coef, logger))
+                p = multiprocessing.Process(target=ModelTools.train, args=("PPO", seed, train_data, test_data, parameters, contender_name, contenders, logger))
             p.start()
             processes.append(p)
 

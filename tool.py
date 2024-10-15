@@ -8,7 +8,11 @@ import sys
 # run_directory = 'runs/2024-10-13-11-23-15' # 24 PPO's take on 2024
 # run_directory = 'runs/2024-10-13-12-13-13' # One Trade Window, 24 PPOs
 # run_directory = 'runs/2024-10-13-04-05-06' # Failed run on server (16 cpus took ~18 hours cost 10$)
-run_directory = 'runs/2024-10-13-14-28-03' # 24 PPO 24 A2C obliterate ensemble window
+# run_directory = 'runs/2024-10-13-14-28-03' # 24 PPO 24 A2C obliterate ensemble window
+
+# run_directory = 'runs/2024-10-14-16-07-35' # Test with coninuous k for buy and sell
+# run_directory = 'runs/2024-10-14-16-29-07' # Test with discrete
+run_directory = 'runs/2024-10-14-17-32-01'
 
 if len(sys.argv) > 1:
     run_directory = sys.argv[1]
