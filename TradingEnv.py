@@ -7,13 +7,14 @@ import math
 class TradingEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, df, starting_cash):
+    def __init__(self, df, parameters, starting_cash):
         super(TradingEnv, self).__init__()
 
         self.df = df
         self.reward_range = (-np.inf, np.inf)
 
         self.starting_cash = starting_cash
+        self.parameters = parameters
         self.k = int(self.starting_cash / df['Close'].iloc[0]) # Maximum amount of stocks bought or sold each minute
         
         self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float64)
@@ -59,26 +60,30 @@ class TradingEnv(gym.Env):
 
             buyable_stocks = (self.cash) / (current_price * (1 + self.c_buying)) 
 
-            # to_buy = min(buyable_stocks, self.k * action[0])
+            if self.parameters['buy_action_space'] == "continuous":
+                to_buy = min(buyable_stocks, self.k * action[0])
 
-            # self.stock += to_buy
-            # self.cash -= to_buy * current_price * (1 + self.c_buying)
+                self.stock += to_buy
+                self.cash -= to_buy * current_price * (1 + self.c_buying)
 
-            self.stock += buyable_stocks
-            self.cash = 0
+            else:
+                self.stock += buyable_stocks
+                self.cash = 0
 
             self.last_buy_step = self.current_step
             self.last_action = 1
 
-        elif action[0] < 0 and self.stock > 0: # sell all
+        elif action[0] < 0 and self.stock > 0: # sell
 
-            # to_sell = min(self.stock, self.k * action[0] * -1)
+            if self.parameters['sell_action_space'] == "continuous":
+                to_sell = min(self.stock, self.k * action[0] * -1)
 
-            # self.cash += to_sell * (current_price * (1 - self.c_selling))
-            # self.stock -= to_sell
+                self.cash += to_sell * (current_price * (1 - self.c_selling))
+                self.stock -= to_sell
 
-            self.cash += self.stock * current_price * (1 - self.c_selling)
-            self.stock = 0
+            else:
+                self.cash += self.stock * current_price * (1 - self.c_selling)
+                self.stock = 0
 
             self.last_sell_step = self.current_step
             self.last_action = -1 

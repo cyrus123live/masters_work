@@ -1,5 +1,6 @@
 import ModelTools
 import sys
+import yfinance as yf
 
 # run_directory = 'runs/2024-10-11-22-08-51'
 # run_directory = 'runs/2024-10-12-00-10-18' # Ensemble window run, 12 contenders with 5 training rounds each
@@ -14,6 +15,10 @@ import sys
 # run_directory = 'runs/2024-10-14-16-29-07' # Test with discrete
 # run_directory = 'runs/2024-10-14-17-32-01'
 # run_directory = 'runs/imported_runs/2024-10-13-17-33-24' # Test on windows, 16/16 1/1
+# run_directory = 'runs/imported_runs/2024-10-14-00-30-29' # Test on DO, 10/10 3/3
+
+# run_directory = 'runs/2024-10-15-18-59-24' # Daily test #1
+
 run_directory = 'runs/2024-10-14-20-40-23' # continous test
 
 if len(sys.argv) > 1:

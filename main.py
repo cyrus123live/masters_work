@@ -34,13 +34,13 @@ def main():
         "train_months": 3,
         "test_months": 3,
         "trade_months": 3,
-        "num_ppo": 16,
-        "num_a2c": 16,
+        "num_ppo": 24,
+        "num_a2c": 24,
         "training_rounds_per_contender": 20,
         "starting_cash": 1000000,
         "ent_coef": 0.01,
-        "buy_action_space": "discrete",
-        "sell_action_space": "discrete",
+        "buy_action_space": "continuous",
+        "sell_action_space": "continuous",
         "t": "daily"
     }
 
@@ -123,7 +123,7 @@ def main():
 
         # Get best contender and trade with them
         logger.print_out(f"\nStarting trading with model with score {contenders[0]['score']:.2f}")
-        trade_window_history = ModelTools.test_model(PPO.load(contenders[0]['model']), trade_data, cash)
+        trade_window_history = ModelTools.test_model(PPO.load(contenders[0]['model']), trade_data, parameters, cash)
         ModelTools.write_history_to_file(trade_window_history, f"{trade_window_folder_name}/trade_window_history")
 
         # Update running balance

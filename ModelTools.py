@@ -148,9 +148,11 @@ def plot_history(history):
 
 
 # Returns a history dataframe using TradingEnv
-def test_model(model, test_data, starting_cash = 1000000):
+def test_model(model, test_data, parameters, cash = 0):
+    if cash==0:
+        cash = parameters['starting_cash']
 
-    test_env = Monitor(TradingEnv(test_data, starting_cash))
+    test_env = Monitor(TradingEnv(test_data, parameters, cash))
     obs, info = test_env.reset()
     history = [test_env.render()]
     for i in range(test_data.shape[0] - 1):
@@ -172,15 +174,15 @@ def train(model_type, seed, train_data, test_data, parameters, contender_name, c
     torch.backends.cudnn.deterministic = False
     torch.backends.cudnn.benchmark = True
 
-    train_env = Monitor(TradingEnv(train_data, parameters["starting_cash"]))
+    train_env = Monitor(TradingEnv(train_data, parameters, parameters['starting_cash']))
     if model_type == "A2C":
         model = A2C("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=parameters["ent_coef"])
     else:
         model = PPO("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=parameters["ent_coef"])
 
-    return train_model(model, train_data, test_data, parameters["training_rounds_per_contender"], contender_name, contenders, logger)
+    return train_model(model, train_data, test_data, parameters["training_rounds_per_contender"], contender_name, contenders, logger, parameters)
 
-def train_model(model, train_data, test_data, training_rounds_per_contender, contender_name, contenders, logger):
+def train_model(model, train_data, test_data, training_rounds_per_contender, contender_name, contenders, logger, parameters):
 
     model = model
     best_model = model
@@ -191,14 +193,15 @@ def train_model(model, train_data, test_data, training_rounds_per_contender, con
     for i in range(training_rounds_per_contender):
 
         model.learn(total_timesteps=train_data.shape[0] - 1, progress_bar=False, reset_num_timesteps=False)
-        score = test_model(model, test_data).iloc[-1]["portfolio_value"] # For now measuring score of model with just ending portfolio value, TODO: make this sharpe or sortino
+        score = test_model(model, test_data, parameters).iloc[-1]["portfolio_value"] # For now measuring score of model with just ending portfolio value, TODO: make this sharpe or sortino
         if score > best_score:
             best_model = model
             best_score = score
 
         # logger.print_out(f"    - Ended training round {i + 1}/{training_rounds_per_contender} with score {score:.2f}")
 
-    best_model.save(contender_name)
+    if not len(contenders) > 1 or round(float(best_score), 2) > max([c["score"] for c in contenders]):
+        best_model.save(contender_name)
     contenders.append({
         "model": contender_name,
         "score": round(float(best_score), 2)
