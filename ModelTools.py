@@ -87,6 +87,7 @@ def get_sharpe_and_volatility(history, col):
     history['returns'] = history[col].pct_change(1)
     mean_return = history['returns'].mean()
     std_return = history['returns'].std()
+    if std_return == 0: std_return = 0.0001
 
     history.dropna(inplace=True)
 
@@ -193,7 +194,10 @@ def train_model(model, train_data, test_data, training_rounds_per_contender, con
     for i in range(training_rounds_per_contender):
 
         model.learn(total_timesteps=train_data.shape[0] - 1, progress_bar=False, reset_num_timesteps=False)
-        score = test_model(model, test_data, parameters).iloc[-1]["portfolio_value"] # For now measuring score of model with just ending portfolio value, TODO: make this sharpe or sortino
+        if parameters['validation_parameter'] == 'sharpe':
+            score, _ = get_sharpe_and_volatility(test_model(model, test_data, parameters), 'portfolio_value')
+        else:
+            score = test_model(model, test_data, parameters).iloc[-1]["portfolio_value"] 
         if score > best_score:
             best_model = model
             best_score = score
@@ -207,4 +211,4 @@ def train_model(model, train_data, test_data, training_rounds_per_contender, con
         "score": round(float(best_score), 2)
     })
 
-    logger.print_out(f"- Ended training with score {best_score}")
+    logger.print_out(f"- Ended training with score {best_score:.2f}")

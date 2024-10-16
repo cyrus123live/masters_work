@@ -36,12 +36,13 @@ def main():
         "trade_months": 3,
         "num_ppo": 24,
         "num_a2c": 24,
-        "training_rounds_per_contender": 20,
+        "training_rounds_per_contender": 40,
         "starting_cash": 1000000,
         "ent_coef": 0.01,
         "buy_action_space": "continuous",
         "sell_action_space": "continuous",
-        "t": "daily"
+        "t": "daily",
+        'validation_parameter': "sharpe"
     }
 
     cash = parameters["starting_cash"]
