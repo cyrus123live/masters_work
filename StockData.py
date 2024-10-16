@@ -113,7 +113,7 @@ def calculate_adx(data, window=14):
 # ---------------------------------------------------- 
 
 
-def process_data(data):
+def process_data(data, daily = True):
 
     processed_data = pd.DataFrame(index=data.index)
 
@@ -155,7 +155,10 @@ def process_data(data):
 
     processed_data.dropna(inplace=True)
 
-    return processed_data.between_time('07:00', '16:00')
+    if daily:
+        return processed_data
+    else:
+        return processed_data.between_time('07:00', '16:00')
 
 def get_min_max_values():
     historical_data = get_consecutive_months(dt.datetime(year=2000, month=1, day=1), 120) # get 2000-2010 data 
@@ -186,6 +189,36 @@ def get_month_hourly(year, month):
         ).dropna()
     )
 
+def get_month_daily(year, month):
+    frames = []
+    frames.append(
+        get_month_csv(year, month).resample('D').agg(
+        open=('open', 'first'),
+        high=('high', 'max'),
+        low=('low', 'min'),
+        close=('close', 'last'),
+        volume=('volume', 'sum')
+        ).dropna().iloc[::-1]
+    )
+    i_year = year
+    i_month = month
+    for i in range(5):
+        i_month -= 1
+        if i_month < 1:
+            i_month = 12
+            i_year -= 1
+        frames.append(
+            get_month_csv(i_year, i_month).resample('D').agg(
+            open=('open', 'first'),
+            high=('high', 'max'),
+            low=('low', 'min'),
+            close=('close', 'last'),
+            volume=('volume', 'sum')
+            ).dropna().iloc[::-1]
+        )
+    output = process_data(pd.concat(frames).iloc[::-1], True)
+    return output[output.index.month == month]
+
 def get_random_month_not_2008():
     year = random.randint(0, 23)
     while year == 8:
@@ -213,10 +246,14 @@ def get_random_train_data(num_months):
         frames.append(get_random_month())
     return pd.concat(frames)
 
-def get_consecutive_months(starting_month, num_months):
+
+def get_consecutive_months(starting_month, num_months, t="minutely"):
     frames = []
     for i in range(num_months):
-        frames.append(get_month((starting_month + pd.DateOffset(months=i)).year % 100, (starting_month + pd.DateOffset(months=i)).month))
+        if t == "daily":
+            frames.append(get_month_daily((starting_month + pd.DateOffset(months=i)).year % 100, (starting_month + pd.DateOffset(months=i)).month))   
+        else: 
+            frames.append(get_month((starting_month + pd.DateOffset(months=i)).year % 100, (starting_month + pd.DateOffset(months=i)).month))
     return pd.concat(frames)
 
 def get_year(year):

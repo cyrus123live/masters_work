@@ -24,21 +24,24 @@ def main():
 
     multiprocessing.set_start_method('spawn')
     manager = multiprocessing.Manager()
-    multiprocessing_cores = multiprocessing.cpu_count() - 1
+    multiprocessing_cores = 1
     if len(sys.argv) > 1:
         multiprocessing_cores = int(sys.argv[1])
 
     parameters = {
         "starting_month": "2016-1",
-        "ending_month": "2016-2",
-        "train_months": 1,
-        "test_months": 1,
-        "trade_months": 1,
-        "num_ppo": 0,
-        "num_a2c": 1,
-        "training_rounds_per_contender": 3,
+        "ending_month": "2020-6",
+        "train_months": 3,
+        "test_months": 3,
+        "trade_months": 3,
+        "num_ppo": 16,
+        "num_a2c": 16,
+        "training_rounds_per_contender": 20,
         "starting_cash": 1000000,
-        "ent_coef": 0.01
+        "ent_coef": 0.01,
+        "buy_action_space": "discrete",
+        "sell_action_space": "discrete",
+        "t": "daily"
     }
 
     cash = parameters["starting_cash"]
@@ -75,12 +78,12 @@ def main():
         logger.print_out(f"Training window [{train_window_start.strftime('%Y-%m-%d')}, {train_window_end.strftime('%Y-%m-%d')}]\n")
 
         # Get train, test, and trade data
-        train_data = StockData.get_consecutive_months(starting_month=train_window_start, num_months=parameters["train_months"])
+        train_data = StockData.get_consecutive_months(starting_month=train_window_start, num_months=parameters["train_months"], t=parameters["t"])
         if parameters["test_months"] == 0:
             test_data = train_data
         else:
-            test_data = StockData.get_consecutive_months(starting_month=validation_window_start, num_months=parameters["test_months"])
-        trade_data = StockData.get_consecutive_months(starting_month=trade_window_start, num_months=parameters["trade_months"])
+            test_data = StockData.get_consecutive_months(starting_month=validation_window_start, num_months=parameters["test_months"], t=parameters["t"])
+        trade_data = StockData.get_consecutive_months(starting_month=trade_window_start, num_months=parameters["trade_months"], t=parameters["t"])
 
         # Instantiate trade window folder
         trade_window_folder_name = f"{run_folder_name}/{trade_window_start.strftime('%Y-%m-%d')}"
@@ -89,7 +92,7 @@ def main():
         logger.print_out(f"Finished initializing, beginning to train contenders.\n")
         training_start_time = dt.datetime.now()
 
-        # Train our PPO contenders using multiprocessing 
+        # Train our contenders using multiprocessing 
         processes = []
         contenders = manager.list()
         for i in range(int(parameters["num_a2c"]) + int(parameters["num_ppo"])):
@@ -114,11 +117,11 @@ def main():
 
         logger.print_out(f"\nFinished training contenders in {(dt.datetime.now() - training_start_time).seconds} seconds.\n")
 
-        # Print PPO contenders for debugging
+        # Print contenders for debugging
         for p in contenders:
             logger.print_out(p)
 
-        # Get best PPO contender and trade with them
+        # Get best contender and trade with them
         logger.print_out(f"\nStarting trading with model with score {contenders[0]['score']:.2f}")
         trade_window_history = ModelTools.test_model(PPO.load(contenders[0]['model']), trade_data, cash)
         ModelTools.write_history_to_file(trade_window_history, f"{trade_window_folder_name}/trade_window_history")

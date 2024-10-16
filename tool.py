@@ -12,7 +12,9 @@ import sys
 
 # run_directory = 'runs/2024-10-14-16-07-35' # Test with coninuous k for buy and sell
 # run_directory = 'runs/2024-10-14-16-29-07' # Test with discrete
-run_directory = 'runs/2024-10-14-17-32-01'
+# run_directory = 'runs/2024-10-14-17-32-01'
+# run_directory = 'runs/imported_runs/2024-10-13-17-33-24' # Test on windows, 16/16 1/1
+run_directory = 'runs/2024-10-14-20-40-23' # continous test
 
 if len(sys.argv) > 1:
     run_directory = sys.argv[1]

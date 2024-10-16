@@ -59,13 +59,13 @@ class TradingEnv(gym.Env):
 
             buyable_stocks = (self.cash) / (current_price * (1 + self.c_buying)) 
 
-            to_buy = min(buyable_stocks, self.k * action[0])
+            # to_buy = min(buyable_stocks, self.k * action[0])
 
-            self.stock += to_buy
-            self.cash -= to_buy * current_price * (1 + self.c_buying)
+            # self.stock += to_buy
+            # self.cash -= to_buy * current_price * (1 + self.c_buying)
 
-            # self.stock += buyable_stocks
-            # self.cash = 0
+            self.stock += buyable_stocks
+            self.cash = 0
 
             self.last_buy_step = self.current_step
             self.last_action = 1
