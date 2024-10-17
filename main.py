@@ -34,15 +34,16 @@ def main():
         "train_months": 3,
         "test_months": 3,
         "trade_months": 3,
-        "num_ppo": 24,
-        "num_a2c": 24,
-        "training_rounds_per_contender": 40,
+        "num_ppo": 16,
+        "num_a2c": 16,
+        "training_rounds_per_contender": 3,
         "starting_cash": 1000000,
         "ent_coef": 0.01,
-        "buy_action_space": "continuous",
-        "sell_action_space": "continuous",
-        "t": "daily",
-        'validation_parameter': "sharpe"
+        "buy_action_space": "discrete",
+        "sell_action_space": "discrete",
+        "t": "minutely",
+        'validation_parameter': "simple returns",
+        'trading_times': 'any'
     }
 
     cash = parameters["starting_cash"]
