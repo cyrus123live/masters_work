@@ -145,6 +145,9 @@ def plot_history(history):
 
     p.plot(to_plot['close'], label="Stock Movement")
     p.plot(to_plot['portfolio'], label="Portfolio Value")
+    if 'price' in history.columns:
+        to_plot['price'] = history["price"] / history.iloc[0]["close"]
+        p.plot(to_plot['price'], label="Price With Spread")
     # [p.axvline(x = i, color = 'b') for i in pd.date_range(history.index[0], history.index[-1], freq='QS')]
     p.legend()
 

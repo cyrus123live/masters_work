@@ -19,7 +19,7 @@ class TradingEnv(gym.Env):
         
         self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float64)
         self.observation_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(7,), dtype=np.float64
+            low=-np.inf, high=np.inf, shape=(len(self.parameters['indicators']) + 2,), dtype=np.float64
         ) 
         
         # Set starting point
@@ -31,28 +31,52 @@ class TradingEnv(gym.Env):
         self.stock = 0 
         self.total_value = self.cash
 
-        self.c_selling = 0
-        self.c_buying = 0 # 0.5% fees is 0.0005
+        self.c_selling = parameters["fees"]
+        self.c_buying = parameters["fees"] # 0.5% fees is 0.0005
         self.r = 0
         self.r_bh = math.log(1-self.c_buying)
         self.last_action = 0
+        self.prices = []
 
     def _get_obs(self):
 
         # current_row = self.df[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[self.current_step] 
         # current_row = self.df[self.df.filter(regex='_Scaled$').columns].iloc[self.current_step]
-        current_row = self.df[["Close_Normalized", "MACD_Normalized", "RSI_Normalized", "CCI_Normalized", "ADX_Normalized"]].iloc[self.current_step]
+        # print(self.df.iloc[self.current_step])
+        current_row = self.df[self.parameters['indicators']].iloc[self.current_step]
+
+        # ------- Spread calculations -----------
+        current_market_price = self.df.iloc[self.current_step]["Close"]
+        adjusted_low = current_market_price * (1 - self.parameters["spread"])
+        adjusted_high = current_market_price * (1 + self.parameters["spread"])
+
+        # Price is lower if bot owns stock, higher if it doesn't, to simulate spread
+        if self.stock > 0:
+            current_price = adjusted_low
+        else:
+            current_price = adjusted_high
+        self.prices.append(current_price)
+
+        # For obs...
+        # Do we need to calculate mean and std based on post-manipulation prices?
+        # current_price_normalized = (current_price - self.df.iloc[self.current_step]["Close_Mean"]) / self.df.iloc[self.current_step]["Close_STD"]
+        # adjusted_low_normalized = (adjusted_low - self.df.iloc[self.current_step]["Close_Mean"]) / self.df.iloc[self.current_step]["Close_STD"]
+        # adjusted_high_normalized = (adjusted_high - self.df.iloc[self.current_step]["Close_Mean"]) / self.df.iloc[self.current_step]["Close_STD"]
+
+        # ----------------------------------------
 
         amount_held = self.stock / self.k 
         # amount_held = np.clip(2 * self.stock / self.k - 1, -1, 1)
         
         cash_normalized = self.cash / self.starting_cash
         # cash_normalized = np.clip(2 * self.cash / self.starting_cash - 1, -1, 1)
-        return np.array(current_row.tolist() + [amount_held, cash_normalized])
+        # return np.array([adjusted_low_normalized, adjusted_high_normalized, amount_held, cash_normalized])
+        return np.array(current_row.to_list() + [amount_held, cash_normalized])
 
     def _take_action(self, action):
 
-        current_price = self.df['Close'].iloc[self.current_step]
+        current_price = self.prices[-1]
+
 
         # Current meta seems to be action space is -k, ..., 0,..., k for k stocks, normalized to [-1, 1], see finrl single stock example: https://finrl.readthedocs.io/en/latest/tutorial/Introduction/SingleStockTrading.html
 
@@ -137,11 +161,12 @@ class TradingEnv(gym.Env):
         self.r = 0
         self.r_bh = math.log(1-self.c_buying)
         self.last_action = 0
-        
+        self.prices = []
+
         return self._get_obs(), {}
 
     def render(self, mode='human', close=False):
         if mode == 'human':
             # print(f"Step: {self.current_step}, Total Value: {self.total_value}, Cash: {self.cash}, Stocks: {self.stock}")
             # return {"Portfolio_Value": self.total_value, "Close": self.df['Close'].iloc[self.current_step]}
-            return {"portfolio_value": self.total_value, "close": self.df['Close'].iloc[self.current_step], "cash": self.cash, "held": self.stock}
+            return {"portfolio_value": self.total_value, "close": self.df['Close'].iloc[self.current_step], "price": self.prices[-1], "cash": self.cash, "held": self.stock}
