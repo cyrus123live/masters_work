@@ -1,4 +1,5 @@
 from stable_baselines3 import PPO
+from stable_baselines3 import A2C
 from TradingEnv import TradingEnv
 import StockData
 import ModelTools
@@ -30,25 +31,25 @@ def main():
 
     parameters = {
         "starting_month": "2016-1",
-        "ending_month": "2017-1",
-        "train_months": 12,
-        "test_months": 1,
-        "trade_months": 12,
+        "ending_month": "2020-12",
+        "train_months": 3,
+        "test_months": 3,
+        "trade_months": 3,
         "num_ppo": 0,
-        "num_a2c": 16,
+        "num_a2c": 32,
         "training_rounds_per_contender": 20,
         "timsteps_between_check": 5,
         "starting_cash": 1000000,
-        "ent_coef": 0.01,
-        "buy_action_space": "continuous",
-        "sell_action_space": "continuous",
+        "ent_coef": 1,
+        "buy_action_space": "discrete",
+        "sell_action_space": "discrete",
         "t": "daily",
-        'validation_parameter': "simple returns",
+        'validation_parameter': "sharpe",
         'trading_times': 'any',
-        'indicators': ["Close_Normalized", "D_HL_Normalized", "Change_Normalized"],
+        'indicators': ["Close_Normalized", "D_HL_Normalized", "Change_Normalized", "SMA_20", "EMA_20", "RSI", "ATR", "MACD", "Bollinger_Mid", "CCI", "Williams_%R", "CMF", "OBV", "ADX"],
         "spread": 0, 
         "fees": 0,
-        "ticker": "eem"
+        "ticker": "spy"
     }
 
     cash = parameters["starting_cash"]
@@ -107,28 +108,29 @@ def main():
         training_start_time = dt.datetime.now()
 
         # Train our contenders using multiprocessing 
-        contenders = []
-        [ModelTools.train("A2C", int(random.random() * 100000), train_data, test_data, parameters, f"{trade_window_folder_name}/models/A2C_{i}", contenders, logger) for i in range(int(parameters["num_a2c"]))]
-        # processes = []
-        # contenders = manager.list()
-        # for i in range(int(parameters["num_a2c"]) + int(parameters["num_ppo"])):
-        #     seed = int(random.random() * 100000)
-        #     if i < int(parameters["num_a2c"]):
-        #         contender_name = f"{trade_window_folder_name}/models/A2C_{i}"
-        #         p = multiprocessing.Process(target=ModelTools.train, args=("A2C", seed, train_data, test_data, parameters, contender_name, contenders, logger))
-        #     else:
-        #         contender_name = f"{trade_window_folder_name}/models/PPO_{i}"
-        #         p = multiprocessing.Process(target=ModelTools.train, args=("PPO", seed, train_data, test_data, parameters, contender_name, contenders, logger))
-        #     p.start()
-        #     processes.append(p)
+        # contenders = []
+        # [ModelTools.train("A2C", int(random.random() * 100000), train_data, test_data, parameters, f"{trade_window_folder_name}/models/A2C_{i}", contenders, logger) for i in range(int(parameters["num_a2c"]))]
+        # [ModelTools.train("PPO", int(random.random() * 100000), train_data, test_data, parameters, f"{trade_window_folder_name}/models/PPO_{i}", contenders, logger) for i in range(int(parameters["num_ppo"]))]
+        processes = []
+        contenders = manager.list()
+        for i in range(int(parameters["num_a2c"]) + int(parameters["num_ppo"])):
+            seed = int(random.random() * 100000)
+            if i < int(parameters["num_a2c"]):
+                contender_name = f"{trade_window_folder_name}/models/A2C_{i}"
+                p = multiprocessing.Process(target=ModelTools.train, args=("A2C", seed, train_data, test_data, parameters, contender_name, contenders, logger))
+            else:
+                contender_name = f"{trade_window_folder_name}/models/PPO_{i}"
+                p = multiprocessing.Process(target=ModelTools.train, args=("PPO", seed, train_data, test_data, parameters, contender_name, contenders, logger))
+            p.start()
+            processes.append(p)
 
-        #     if len(processes) >= multiprocessing_cores:
-        #         for p in processes:
-        #             p.join()
-        #         processes = []
-        # for p in processes:
-        #     p.join()
-        # contenders = list(contenders)
+            if len(processes) >= multiprocessing_cores:
+                for p in processes:
+                    p.join()
+                processes = []
+        for p in processes:
+            p.join()
+        contenders = list(contenders)
         contenders.sort(key=lambda x: x['score'], reverse=True)
 
         logger.print_out(f"\nFinished training contenders in {(dt.datetime.now() - training_start_time).seconds} seconds.\n")
@@ -139,7 +141,10 @@ def main():
 
         # Get best contender and trade with them
         logger.print_out(f"\nStarting trading with model with score {contenders[0]['score']:.2f}")
-        trade_window_history = ModelTools.test_model(PPO.load(contenders[0]['model']), trade_data, parameters, cash)
+        if "PPO" in contenders[0]['model']:
+            trade_window_history = ModelTools.test_model(PPO.load(contenders[0]['model']), trade_data, parameters, cash)
+        elif "A2C" in contenders[0]['model']:
+            trade_window_history = ModelTools.test_model(A2C.load(contenders[0]['model']), trade_data, parameters, cash)
         ModelTools.write_history_to_file(trade_window_history, f"{trade_window_folder_name}/trade_window_history")
 
         # Update running balance
@@ -153,6 +158,7 @@ def main():
     logger.print_out(f"\nFinished run in {(dt.datetime.now() - run_start_time).seconds} seconds.\n")
 
     ModelTools.print_stats_from_history(combined_history)
+    ModelTools.plot_history(combined_history)
 
 if __name__ == "__main__":
     main()

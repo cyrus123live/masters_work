@@ -313,8 +313,10 @@ def get_current_data():
     # Note: provides a week of data
     prices = yf.Ticker("SPY").history(period='max', interval='1m', prepost=True)
     prices["close"] = prices["Close"]
+    prices["open"] = prices["Open"]
     prices["low"] = prices["Low"]
     prices["high"] = prices["High"]
+    prices["volume"] = prices["Volume"]
 
     prices = prices[prices.index.day == int(dt.datetime.today().strftime("%d"))] # Get current date data
 
