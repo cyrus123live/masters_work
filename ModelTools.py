@@ -194,21 +194,27 @@ def train_model(model, train_data, test_data, training_rounds_per_contender, con
     model = model
     best_model = model
     best_score = 0
+    score = 0
 
     logger.print_out("Started training a model")
     
     for i in range(training_rounds_per_contender):
 
-        model.learn(total_timesteps=train_data.shape[0] - 1, progress_bar=False, reset_num_timesteps=False)
-        if parameters['validation_parameter'] == 'sharpe':
-            score, _ = get_sharpe_and_volatility(test_model(model, test_data, parameters), 'portfolio_value')
-        else:
-            score = test_model(model, test_data, parameters).iloc[-1]["portfolio_value"] 
-        if score > best_score:
-            best_model = model
-            best_score = score
+        for j in range((train_data.shape[0] - 1) // parameters["timsteps_between_check"]):
 
-        # logger.print_out(f"    - Ended training round {i + 1}/{training_rounds_per_contender} with score {score:.2f}")
+            # model.learn(total_timesteps=train_data.shape[0] - 1, progress_bar=False, reset_num_timesteps=False)
+            model.learn(total_timesteps=parameters["timsteps_between_check"], progress_bar=False, reset_num_timesteps=False)
+            if parameters['validation_parameter'] == 'sharpe':
+                score, _ = get_sharpe_and_volatility(test_model(model, test_data, parameters), 'portfolio_value')
+            else:
+                score = test_model(model, test_data, parameters).iloc[-1]["portfolio_value"] 
+            if score > best_score:
+                best_model = model
+                best_score = score
+
+            # logger.print_out(f"    - Ended scoring round {j + 1}/{(train_data.shape[0] - 1) // parameters['timsteps_between_check']} with score {score:.2f}")
+
+        # logger.print_out(f"    - Ended training round {i + 1}/{training_rounds_per_contender} with score {best_score:.2f}")
 
     if not len(contenders) > 1 or round(float(best_score), 2) > max([c["score"] for c in contenders]):
         best_model.save(contender_name)

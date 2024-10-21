@@ -31,6 +31,7 @@ run_directory = 'runs/2024-10-19-14-05-51' # spread 0.001
 run_directory = 'runs/2024-10-19-16-13-00' # fees 0.00007
 run_directory = 'runs/2024-10-19-18-13-37' # fees 0.00007 larger test
 # run_directory = 'runs/2024-10-20-01-09-15' # fees 0.00007 larger test bring back indicators (seems to have unnatural price spikes)
+run_directory = 'runs/2024-10-20-14-56-20' # Daily test 2020-2021 with RL indicators
 
 if len(sys.argv) > 1:
     run_directory = sys.argv[1]

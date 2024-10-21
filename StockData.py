@@ -170,6 +170,11 @@ def get_min_max_values():
         print("Min: ", historical_data[c].min())
     
 
+def get_daily_csv(year, month, ticker):
+    df = pd.read_csv(f"stock_data/{ticker}_daily.csv", parse_dates=['timestamp'], index_col='timestamp')
+    return df[df.index.strftime("%Y-%m") == f"20{year:02d}-{month:02d}"]
+    
+
 def get_month_csv(year, month):
     folder_name = "spy_data"
 
@@ -191,8 +196,22 @@ def get_month_hourly(year, month):
         ).dropna()
     )
 
-def get_month_daily(year, month):
+def get_month_daily(year, month, ticker):
     frames = []
+    frames.append(get_daily_csv(year, month, ticker).dropna().iloc[::-1])
+    i_year = year
+    i_month = month
+    for i in range(5):
+        i_month -= 1
+        if i_month < 1:
+            i_month = 12
+            i_year -= 1
+        frames.append(get_daily_csv(i_year, i_month, ticker).dropna().iloc[::-1])
+    output = process_data(pd.concat(frames).iloc[::-1], True)
+
+    return output[output.index.month == month]
+
+    '''
     frames.append(
         get_month_csv(year, month).resample('D').agg(
         open=('open', 'first'),
@@ -218,8 +237,11 @@ def get_month_daily(year, month):
             volume=('volume', 'sum')
             ).dropna().iloc[::-1]
         )
+    
     output = process_data(pd.concat(frames).iloc[::-1], True)
     return output[output.index.month == month]
+
+    '''
 
 def get_random_month_not_2008():
     year = random.randint(0, 23)
@@ -249,11 +271,11 @@ def get_random_train_data(num_months):
     return pd.concat(frames)
 
 
-def get_consecutive_months(starting_month, num_months, t="minutely"):
+def get_consecutive_months(starting_month, num_months, parameters):
     frames = []
     for i in range(num_months):
-        if t == "daily":
-            frames.append(get_month_daily((starting_month + pd.DateOffset(months=i)).year % 100, (starting_month + pd.DateOffset(months=i)).month))   
+        if parameters["t"] == "daily":
+            frames.append(get_month_daily((starting_month + pd.DateOffset(months=i)).year % 100, (starting_month + pd.DateOffset(months=i)).month, parameters["ticker"]))   
         else: 
             frames.append(get_month((starting_month + pd.DateOffset(months=i)).year % 100, (starting_month + pd.DateOffset(months=i)).month))
     return pd.concat(frames)

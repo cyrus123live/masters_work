@@ -29,24 +29,26 @@ def main():
         multiprocessing_cores = int(sys.argv[1])
 
     parameters = {
-        "starting_month": "2023-1",
-        "ending_month": "2024-6",
+        "starting_month": "2016-1",
+        "ending_month": "2017-1",
         "train_months": 3,
         "test_months": 3,
         "trade_months": 3,
-        "num_ppo": 24,
-        "num_a2c": 24,
-        "training_rounds_per_contender": 2,
+        "num_ppo": 3,
+        "num_a2c": 3,
+        "training_rounds_per_contender": 20,
+        "timsteps_between_check": 10,
         "starting_cash": 1000000,
         "ent_coef": 0.1,
         "buy_action_space": "discrete",
         "sell_action_space": "discrete",
-        "t": "minutely",
+        "t": "daily",
         'validation_parameter': "simple returns",
         'trading_times': 'any',
         'indicators': ["Close_Normalized", "D_HL_Normalized", "Change_Normalized"],
-        "spread": 0, # 0.000023, # (Swiss Franc to Hungarian Forint on FOREX.com)
-        "fees": 0
+        "spread": 0, 
+        "fees": 0,
+        "ticker": "ibm"
     }
 
     cash = parameters["starting_cash"]
@@ -83,15 +85,19 @@ def main():
         logger.print_out(f"Training window [{train_window_start.strftime('%Y-%m-%d')}, {train_window_end.strftime('%Y-%m-%d')}]\n")
 
         # Get train, test, and trade data
-        train_data = StockData.get_consecutive_months(starting_month=train_window_start, num_months=parameters["train_months"], t=parameters["t"])
+        train_data = StockData.get_consecutive_months(starting_month=train_window_start, num_months = parameters["train_months"], parameters = parameters)
         if parameters["test_months"] == 0:
             test_data = train_data
         else:
-            test_data = StockData.get_consecutive_months(starting_month=validation_window_start, num_months=parameters["test_months"], t=parameters["t"])
+            test_data = StockData.get_consecutive_months(starting_month=validation_window_start, num_months = parameters["test_months"], parameters = parameters)
         try:
-            trade_data = StockData.get_consecutive_months(starting_month=trade_window_start, num_months=parameters["trade_months"], t=parameters["t"])
+            trade_data = StockData.get_consecutive_months(starting_month=trade_window_start, num_months = parameters["trade_months"], parameters = parameters)
         except:
             trade_data = test_data
+
+        # print(train_data)
+        # print(test_data)
+        # print(trade_data)
 
         # Instantiate trade window folder
         trade_window_folder_name = f"{run_folder_name}/{trade_window_start.strftime('%Y-%m-%d')}"
