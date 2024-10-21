@@ -212,7 +212,7 @@ def train_model(model, train_data, test_data, training_rounds_per_contender, con
                 best_model = model
                 best_score = score
 
-            # logger.print_out(f"    - Ended scoring round {j + 1}/{(train_data.shape[0] - 1) // parameters['timsteps_between_check']} with score {score:.2f}")
+            logger.print_out(f"    - Ended scoring round {j + 1}/{(train_data.shape[0] - 1) // parameters['timsteps_between_check']} with score {score:.2f}")
 
         # logger.print_out(f"    - Ended training round {i + 1}/{training_rounds_per_contender} with score {best_score:.2f}")
 
