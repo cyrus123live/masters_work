@@ -12,7 +12,7 @@ import StockData
 import ModelTools
 
 MODEL_NAME = "PPO_109"
-FOLDER_NAME = "2024-10-21"
+FOLDER_NAME = "2024-10-22"
 
 # Returns a history dataframe
 def test_model_manually(model, test_data = StockData.get_current_data(), starting_cash = 1000000):
@@ -49,15 +49,15 @@ def plot_result(result):
     # model = A2C.load("/root/RLTrader/models/" + MODEL_NAME)
 
     result.index = [dt.datetime.fromtimestamp(t).astimezone(tz=dt.timezone(dt.timedelta(hours=-4))) for t in result["Time"]]
-    result["Close"] = result["Close"].shift(-1)
+    # result["Close"] = result["Close"].shift(-1)
+    # print(result.columns)
     print(result)
 
-    sim = test_model_manually(PPO.load("PPO_109.zip"))
-    print(sim)
+    # sim = test_model_manually(PPO.load("PPO_109.zip"))
 
     to_plot = pd.DataFrame(index=result.index)
     to_plot['close'] = result["Close"] / result.iloc[0]["Close"]
-    to_plot['portfolio'] = (result["Resulting Cash"] + result["Resulting Held"] * result["Close"])/ (result.iloc[0]["Resulting Cash"] + result.iloc[0]["Resulting Held"] * result.iloc[0]["Close"])
+    to_plot['portfolio'] = (result["Cash"] + result["Held"] * result["Close"])/ (result.iloc[0]["Cash"] + result.iloc[0]["Held"] * result.iloc[0]["Close"])
 
     figure = plt.figure()
     p = figure.add_subplot()
@@ -76,6 +76,7 @@ def plot_result(result):
 def main():
     result = pd.DataFrame.from_dict(requests.get(f"http://104.131.87.187:5000/minutely_json/{FOLDER_NAME}").json())
     plot_result(result)
+    # ModelTools.plot_history(test_model_manually(PPO.load("PPO_109")))
 
 if __name__ == "__main__":
     main()

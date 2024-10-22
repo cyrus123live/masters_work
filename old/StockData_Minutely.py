@@ -133,16 +133,16 @@ def process_data(data):
     processed_data["Volume"] = data["volume"]
     processed_data.dropna(inplace=True)
 
-    processed_data['SMA_20'] = processed_data['Close'].rolling(window=20).mean()
+    # processed_data['SMA_20'] = processed_data['Close'].rolling(window=20).mean()
     # processed_data['EMA_20'] = processed_data['Close'].ewm(span=20, adjust=False).mean()
     processed_data['RSI'] = calculate_rsi(processed_data)
-    processed_data['ATR'] = calculate_atr(processed_data)
+    # processed_data['ATR'] = calculate_atr(processed_data)
     processed_data['MACD'], processed_data['MACD_Signal'], _ = calculate_macd(processed_data)
-    processed_data['Bollinger_Mid'], processed_data['Bollinger_Upper'], processed_data['Bollinger_Lower'] = calculate_bollinger_bands(processed_data)
+    # processed_data['Bollinger_Mid'], processed_data['Bollinger_Upper'], processed_data['Bollinger_Lower'] = calculate_bollinger_bands(processed_data)
     processed_data['CCI'] = calculate_cci(processed_data)
     # processed_data['Williams_%R'] = calculate_williams_r(processed_data)
-    processed_data['CMF'] = calculate_cmf(processed_data)
-    processed_data['OBV'] = calculate_obv(processed_data)
+    # processed_data['CMF'] = calculate_cmf(processed_data)
+    # processed_data['OBV'] = calculate_obv(processed_data)
     # processed_data['ADX'] = calculate_adx(processed_data)
     #  --------------------------
 
@@ -278,9 +278,12 @@ def get_random_train_data(num_months):
 def get_consecutive_months(starting_month, num_months, parameters):
     frames = [[] for i in range(len(parameters["tickers"]))]
     for i in range(num_months):
-        data = get_month_daily((starting_month + pd.DateOffset(months=i)).year % 100, (starting_month + pd.DateOffset(months=i)).month, parameters["tickers"])
-        for i, d in enumerate(data):
-            frames[i].append(d)   
+        if parameters["t"] == "daily":
+            data = get_month_daily((starting_month + pd.DateOffset(months=i)).year % 100, (starting_month + pd.DateOffset(months=i)).month, parameters["tickers"])
+            for i, d in enumerate(data):
+                frames[i].append(d)   
+        else: 
+            frames.append(get_month((starting_month + pd.DateOffset(months=i)).year % 100, (starting_month + pd.DateOffset(months=i)).month))
     return [pd.concat(f) for f in frames]
 
 def get_year(year):

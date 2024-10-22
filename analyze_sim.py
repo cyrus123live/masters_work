@@ -26,15 +26,18 @@ import yfinance as yf
 # run_directory = 'runs/2024-10-17-19-51-34' # Latest possible train
 # run_directory = 'runs/2024-10-17-22-56-26' # 2023-24
 # run_directory = 'runs/2024-10-19-00-32-00' # Close only indicator
-run_directory = 'runs/2024-10-19-13-30-25' # First spread experiment 0.01
-run_directory = 'runs/2024-10-19-14-05-51' # spread 0.001
-run_directory = 'runs/2024-10-19-16-13-00' # fees 0.00007
-run_directory = 'runs/2024-10-19-18-13-37' # fees 0.00007 larger test
+# run_directory = 'runs/2024-10-19-13-30-25' # First spread experiment 0.01
+# run_directory = 'runs/2024-10-19-14-05-51' # spread 0.001
+# run_directory = 'runs/2024-10-19-16-13-00' # fees 0.00007
+# run_directory = 'runs/2024-10-19-18-13-37' # fees 0.00007 larger test
 # run_directory = 'runs/2024-10-20-01-09-15' # fees 0.00007 larger test bring back indicators (seems to have unnatural price spikes)
-run_directory = 'runs/2024-10-20-14-56-20' # Daily test 2020-2021 with RL indicators
-run_directory = 'runs/2024-10-20-18-35-03' # Daily test IBM 2016-2017
-run_directory = 'runs/2024-10-20-20-40-13' # All the indicators, a year to train, 2016-2017 (positive in short bursts
-run_directory = 'runs/2024-10-20-21-09-41' # Sharpe ratio validation, 2 month period, lots of indicators, does ok
+# run_directory = 'runs/2024-10-20-14-56-20' # Daily test 2020-2021 with RL indicators
+# run_directory = 'runs/2024-10-20-18-35-03' # Daily test IBM 2016-2017
+# run_directory = 'runs/2024-10-20-20-40-13' # All the indicators, a year to train, 2016-2017 (positive in short bursts
+# run_directory = 'runs/2024-10-20-21-09-41' # Sharpe ratio validation, 2 month period, lots of indicators, does ok
+
+# run_directory = 'runs/2024-10-21-19-22-20' # First portfolio test with 4 stocks, lightly negative sloped return
+# run_directory = 'runs/2024-10-21-19-35-14' # Portfolio with 6 stocks, profitable until 2020, big max drawdown
 
 if len(sys.argv) > 1:
     run_directory = sys.argv[1]

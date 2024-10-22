@@ -2,118 +2,63 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 import pandas as pd
+import time
 import math
 
 class TradingEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, df, parameters, starting_cash):
+    def __init__(self, data, parameters, starting_cash):
         super(TradingEnv, self).__init__()
 
-        self.df = df
+        self.data = data
         self.reward_range = (-np.inf, np.inf)
 
         self.starting_cash = starting_cash
         self.parameters = parameters
-        self.k = int(self.starting_cash / df['Close'].iloc[0]) # Maximum amount of stocks bought or sold each minute
+        self.k = [int(self.starting_cash / df['Close'].iloc[0]) for df in data]
         
-        self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float64)
+        # Define action and observation spaces
+        self.action_space = spaces.Box(low=-1, high=1, shape=(len(data),), dtype=np.float64)
         self.observation_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(len(self.parameters['indicators']) + 2,), dtype=np.float64
+            low=-np.inf, high=np.inf, shape=(len(data) * (len(self.parameters['indicators']) + 1) + 1,), dtype=np.float64
         ) 
         
         # Set starting point
         self.current_step = 0
-        self.max_steps = len(self.df) - 1
+        self.max_steps = len(self.data[0]) - 1
         
         # Initialize portfolio
         self.cash = self.starting_cash
-        self.stock = 0 
+        self.stock = [0 for i in data]
         self.total_value = self.cash
 
         self.c_selling = parameters["fees"]
         self.c_buying = parameters["fees"] # 0.5% fees is 0.0005
-        self.r = 0
-        self.r_bh = math.log(1-self.c_buying)
-        self.last_action = 0
-        self.prices = []
 
     def _get_obs(self):
 
-        # current_row = self.df[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[self.current_step] 
-        # current_row = self.df[self.df.filter(regex='_Scaled$').columns].iloc[self.current_step]
-        # print(self.df.iloc[self.current_step])
-        current_row = self.df[self.parameters['indicators']].iloc[self.current_step]
-
-        # ------- Spread calculations -----------
-        current_market_price = self.df.iloc[self.current_step]["Close"]
-        adjusted_low = current_market_price * (1 - self.parameters["spread"])
-        adjusted_high = current_market_price * (1 + self.parameters["spread"])
-
-        # Price is lower if bot owns stock, higher if it doesn't, to simulate spread
-        if self.stock > 0:
-            current_price = adjusted_low
-        else:
-            current_price = adjusted_high
-        self.prices.append(current_price)
-
-        # For obs...
-        # Do we need to calculate mean and std based on post-manipulation prices?
-        # current_price_normalized = (current_price - self.df.iloc[self.current_step]["Close_Mean"]) / self.df.iloc[self.current_step]["Close_STD"]
-        # adjusted_low_normalized = (adjusted_low - self.df.iloc[self.current_step]["Close_Mean"]) / self.df.iloc[self.current_step]["Close_STD"]
-        # adjusted_high_normalized = (adjusted_high - self.df.iloc[self.current_step]["Close_Mean"]) / self.df.iloc[self.current_step]["Close_STD"]
-
-        # ----------------------------------------
-
-        amount_held = self.stock / self.k 
-        # amount_held = np.clip(2 * self.stock / self.k - 1, -1, 1)
-        
-        cash_normalized = self.cash / self.starting_cash
-        # cash_normalized = np.clip(2 * self.cash / self.starting_cash - 1, -1, 1)
-        # return np.array([adjusted_low_normalized, adjusted_high_normalized, amount_held, cash_normalized])
-        return np.array(current_row.to_list() + [amount_held, cash_normalized])
+        observations = []
+        for i, df in enumerate(self.data):
+            observations.extend(df[self.parameters['indicators']].iloc[self.current_step].to_list())
+            observations.append(self.stock[i] / self.k[i])
+        observations.append(self.cash / self.starting_cash)
+        return observations
 
     def _take_action(self, action):
 
-        current_price = self.prices[-1]
+        for i, df in enumerate(self.data):
 
+            # Naive solution from ensemble: go through list and update based on buy and sell decisions, not taking into account that money may be ran out by the time we get to last stocks in list
+            if action[i] < 0 and self.stock[i] > 0:
+                to_sell = min(self.stock[i], action[i] * self.k[i] * -1)
+                self.cash += to_sell * df["Close"].iloc[self.current_step]
+                self.stock[i] -= to_sell
 
-        # Current meta seems to be action space is -k, ..., 0,..., k for k stocks, normalized to [-1, 1], see finrl single stock example: https://finrl.readthedocs.io/en/latest/tutorial/Introduction/SingleStockTrading.html
-
-        if action[0] > 0 and self.cash > 0: # buy
-
-            buyable_stocks = (self.cash) / (current_price * (1 + self.c_buying)) 
-
-            if self.parameters['buy_action_space'] == "continuous":
-                to_buy = min(buyable_stocks, self.k * action[0])
-
-                self.stock += to_buy
-                self.cash -= to_buy * current_price * (1 + self.c_buying)
-
-            else:
-                self.stock += buyable_stocks
-                self.cash = 0
-
-            self.last_buy_step = self.current_step
-            self.last_action = 1
-
-        elif action[0] < 0 and self.stock > 0: # sell
-
-            if self.parameters['sell_action_space'] == "continuous":
-                to_sell = min(self.stock, self.k * action[0] * -1)
-
-                self.cash += to_sell * (current_price * (1 - self.c_selling))
-                self.stock -= to_sell
-
-            else:
-                self.cash += self.stock * current_price * (1 - self.c_selling)
-                self.stock = 0
-
-            self.last_sell_step = self.current_step
-            self.last_action = -1 
-
-        else:
-            self.last_action = 0
+            elif action[i] > 0 and self.cash > 0:
+                to_buy = min(self.cash / df["Close"].iloc[self.current_step], action[i] * self.k[i])
+                self.cash -= to_buy * df["Close"].iloc[self.current_step]
+                self.stock[i] += to_buy
 
     def step(self, action):
         self._take_action(action)
@@ -122,23 +67,10 @@ class TradingEnv(gym.Env):
         self.current_step += 1
         
         # Calculate portfolio value at the new step
-        new_price = self.df['Close'].iloc[self.current_step]
-        new_total_value = self.cash + self.stock * new_price
+        new_total_value = sum([df["Close"].iloc[self.current_step] * self.stock[i] for i, df in enumerate(self.data)]) + self.cash
 
-        # Implementing compounded excess return reward function
-        # r_f = 0.000041 / (60*6.5) # rough risk free rate is 1.5% per annum, or 0.000041 per day
-
-        self.r_bh += math.log(self.df.iloc[self.current_step]["Close"]) - math.log(self.df.iloc[self.current_step - 1]["Close"])
-
-        if self.last_action == 1:
-            self.r += math.log(self.df.iloc[self.current_step]["Close"]) - math.log(self.df.iloc[self.current_step - 1]["Close"])
-            self.r += math.log(1-self.c_buying)
-        elif self.last_action == -1:
-            # self.r += r_f
-            self.r += math.log(1-self.c_selling)
-
-        reward = self.r - self.r_bh
-        # reward = new_total_value - self.total_value * (2**-11) # this unused reward scaling taken from https://github.com/AI4Finance-Foundation/FinRL-Meta/blob/master/meta/env_stock_trading/env_stock_trading.py
+        # Reward scaling from ensemble
+        reward = new_total_value - self.total_value * 1e-4
         
         self.total_value = new_total_value
 
@@ -155,18 +87,12 @@ class TradingEnv(gym.Env):
     def reset(self, seed=None, options=None):
 
         self.cash = self.starting_cash
-        self.stock = 0 
+        self.stock = [0 for i in self.data]
         self.total_value = self.cash
         self.current_step = 0
-        self.r = 0
-        self.r_bh = math.log(1-self.c_buying)
-        self.last_action = 0
-        self.prices = []
 
         return self._get_obs(), {}
 
     def render(self, mode='human', close=False):
         if mode == 'human':
-            # print(f"Step: {self.current_step}, Total Value: {self.total_value}, Cash: {self.cash}, Stocks: {self.stock}")
-            # return {"Portfolio_Value": self.total_value, "Close": self.df['Close'].iloc[self.current_step]}
-            return {"portfolio_value": self.total_value, "close": self.df['Close'].iloc[self.current_step], "price": self.prices[-1], "cash": self.cash, "held": self.stock}
+            return {"portfolio_value": self.total_value, "closes": [df["Close"].iloc[self.current_step] for df in self.data]}

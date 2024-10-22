@@ -30,25 +30,27 @@ def main():
         multiprocessing_cores = int(sys.argv[1])
 
     parameters = {
-        "starting_month": "2016-1",
-        "ending_month": "2020-6",
+        "starting_month": "2020-1",
+        "ending_month": "2022-1",
         "train_months": 3,
         "test_months": 3,
         "trade_months": 3,
-        "num_ppo": 0,
-        "num_a2c": 32,
-        "training_rounds_per_contender": 300,
-        "timsteps_between_check": 100,
+        "num_ppo": 16,
+        "num_a2c": 16,
+        "training_rounds_per_contender": 1,
+        # "timsteps_between_check": 10000,
         "starting_cash": 1000000,
         "ent_coef": 0.1,
-        "buy_action_space": "discrete", # Doesn't work yet
-        "sell_action_space": "discrete", # Doesn't work yet
-        'validation_parameter': "sharpe",
+        "buy_action_space": "discrete",
+        "sell_action_space": "discrete",
+        "t": "minutely",
+        'validation_parameter': "simple return",
         'trading_times': 'any',
-        "indicators": ["Close_Normalized", "MACD_Normalized", "RSI_Normalized", "CCI_Normalized", "CMF_Normalized", "OBV_Normalized", "SMA_20_Normalized", "Bollinger_Mid_Normalized", "ATR_Normalized"],
-        "fees": 0, # Doesn't work yet
-        # "tickers": ["spy", "sh", "eem", "eum", "efa", "efz", "fxi", "yxi", "iev", "epv", "ewz"]
-        "tickers": ["spy", "sh", "eem", "eum", "efa", "efz", "fxi", "iev", "epv", "ewz"]
+        # 'indicators': ["Close_Normalized", "D_HL_Normalized", "Change_Normalized", "SMA_20", "EMA_20", "RSI", "ATR", "MACD", "Bollinger_Mid", "CCI", "Williams_%R", "CMF", "OBV", "ADX"],
+        "indicators": ["Close_Normalized", "D_HL_Normalized", "Change_Normalized"],
+        "spread": 0, 
+        "fees": 0,
+        "ticker": "spy"
     }
 
     cash = parameters["starting_cash"]
@@ -107,6 +109,9 @@ def main():
         training_start_time = dt.datetime.now()
 
         # Train our contenders using multiprocessing 
+        # contenders = []
+        # [ModelTools.train("A2C", int(random.random() * 100000), train_data, test_data, parameters, f"{trade_window_folder_name}/models/A2C_{i}", contenders, logger) for i in range(int(parameters["num_a2c"]))]
+        # [ModelTools.train("PPO", int(random.random() * 100000), train_data, test_data, parameters, f"{trade_window_folder_name}/models/PPO_{i}", contenders, logger) for i in range(int(parameters["num_ppo"]))]
         processes = []
         contenders = manager.list()
         for i in range(int(parameters["num_a2c"]) + int(parameters["num_ppo"])):
