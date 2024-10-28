@@ -19,7 +19,10 @@ class TradingEnv(gym.Env):
         self.k = [int(self.starting_cash / df['Close'].iloc[0]) for df in data]
         
         # Define action and observation spaces
-        self.action_space = spaces.Box(low=-1, high=1, shape=(len(data),), dtype=np.float64)
+        if parameters["buy_sell_action_space"] == "continuous":
+            self.action_space = spaces.Box(low=-1, high=1, shape=(len(data),), dtype=np.float64)
+        else:
+            self.action_space = spaces.Discrete(n=len(data) + 1)
         self.observation_space = spaces.Box(
             low=-np.inf, high=np.inf, shape=(len(data) * (len(self.parameters['indicators']) + 1) + 1,), dtype=np.float64
         ) 
@@ -47,18 +50,31 @@ class TradingEnv(gym.Env):
 
     def _take_action(self, action):
 
-        for i, df in enumerate(self.data):
+        if self.parameters["buy_sell_action_space"] == "discrete":
 
-            # Naive solution from ensemble: go through list and update based on buy and sell decisions, not taking into account that money may be ran out by the time we get to last stocks in list
-            if action[i] < 0 and self.stock[i] > 0:
-                to_sell = min(self.stock[i], action[i] * self.k[i] * -1)
-                self.cash += to_sell * df["Close"].iloc[self.current_step]
-                self.stock[i] -= to_sell
+            decision = int(action)
+            portfolio_value = sum([df["Close"].iloc[self.current_step] * self.stock[i] for i, df in enumerate(self.data)]) + self.cash
+            self.stock = [0 for i in range(len(self.data))]
+            self.cash = 0
+            if decision > 0:
+                self.stock[decision - 1] = portfolio_value / self.data[decision - 1]["Close"].iloc[self.current_step]
+            else:
+                self.cash = portfolio_value
 
-            elif action[i] > 0 and self.cash > 0:
-                to_buy = min(self.cash / df["Close"].iloc[self.current_step], action[i] * self.k[i])
-                self.cash -= to_buy * df["Close"].iloc[self.current_step]
-                self.stock[i] += to_buy
+        else:
+
+            for i, df in enumerate(self.data):
+
+                # Naive solution from ensemble: go through list and update based on buy and sell decisions, not taking into account that money may be ran out by the time we get to last stocks in list
+                if action[i] < 0 and self.stock[i] > 0:
+                    to_sell = min(self.stock[i], action[i] * self.k[i] * -1)
+                    self.cash += to_sell * df["Close"].iloc[self.current_step]
+                    self.stock[i] -= to_sell
+
+                elif action[i] > 0 and self.cash > 0:
+                    to_buy = min(self.cash / df["Close"].iloc[self.current_step], action[i] * self.k[i])
+                    self.cash -= to_buy * df["Close"].iloc[self.current_step]
+                    self.stock[i] += to_buy
 
     def step(self, action):
         self._take_action(action)
@@ -95,4 +111,4 @@ class TradingEnv(gym.Env):
 
     def render(self, mode='human', close=False):
         if mode == 'human':
-            return {"portfolio_value": self.total_value, "closes": [df["Close"].iloc[self.current_step] for df in self.data]}
+            return {"portfolio_value": self.total_value, "closes": [float(df["Close"].iloc[self.current_step]) for df in self.data]}

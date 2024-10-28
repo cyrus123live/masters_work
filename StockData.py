@@ -11,6 +11,7 @@ import requests
 import datetime as dt
 from dotenv import load_dotenv
 import os
+from stockstats import StockDataFrame as Sdf
 
 # Technical Indicators by Chatgpt --------------------
 
@@ -115,7 +116,15 @@ def calculate_adx(data, window=14):
 
 def process_data(data):
 
+    data.index.name = "date"
+    stock = Sdf.retype(data.copy())
+
     processed_data = pd.DataFrame(index=data.index)
+    processed_data['macd'] = stock['macd']
+    processed_data['rsi'] = stock['rsi_30']
+    processed_data['cci'] = stock['cci_30']
+    processed_data['adx'] = stock['dx_30']
+    processed_data['close'] = data["close"]
 
     processed_data["Close"] = data["close"]
     processed_data["Change"] = data["close"].diff()
@@ -127,22 +136,22 @@ def process_data(data):
     # -------------------------------------
     
     # Technical indicators by Chatgpt ----- 
-    processed_data["High"] = data["high"]
-    processed_data["Low"] = data["low"]
-    processed_data["Open"] = data["open"]
-    processed_data["Volume"] = data["volume"]
-    processed_data.dropna(inplace=True)
+    # processed_data["High"] = data["high"]
+    # processed_data["Low"] = data["low"]
+    # processed_data["Open"] = data["open"]
+    # processed_data["Volume"] = data["volume"]
+    # processed_data.dropna(inplace=True)
 
-    processed_data['SMA_20'] = processed_data['Close'].rolling(window=20).mean()
+    # processed_data['SMA_20'] = processed_data['Close'].rolling(window=20).mean()
     # processed_data['EMA_20'] = processed_data['Close'].ewm(span=20, adjust=False).mean()
-    processed_data['RSI'] = calculate_rsi(processed_data)
-    processed_data['ATR'] = calculate_atr(processed_data)
-    processed_data['MACD'], processed_data['MACD_Signal'], _ = calculate_macd(processed_data)
-    processed_data['Bollinger_Mid'], processed_data['Bollinger_Upper'], processed_data['Bollinger_Lower'] = calculate_bollinger_bands(processed_data)
-    processed_data['CCI'] = calculate_cci(processed_data)
+    # processed_data['RSI'] = calculate_rsi(processed_data)
+    # processed_data['ATR'] = calculate_atr(processed_data)
+    # processed_data['MACD'], processed_data['MACD_Signal'], _ = calculate_macd(processed_data)
+    # processed_data['Bollinger_Mid'], processed_data['Bollinger_Upper'], processed_data['Bollinger_Lower'] = calculate_bollinger_bands(processed_data)
+    # processed_data['CCI'] = calculate_cci(processed_data)
     # processed_data['Williams_%R'] = calculate_williams_r(processed_data)
-    processed_data['CMF'] = calculate_cmf(processed_data)
-    processed_data['OBV'] = calculate_obv(processed_data)
+    # processed_data['CMF'] = calculate_cmf(processed_data)
+    # processed_data['OBV'] = calculate_obv(processed_data)
     # processed_data['ADX'] = calculate_adx(processed_data)
     #  --------------------------
 
@@ -152,7 +161,7 @@ def process_data(data):
         rolling_std = processed_data[feature].rolling(window=20).std()
 
         # Normalize the feature
-        processed_data[f'{feature}_Normalized'] = (processed_data[feature] - rolling_mean) / rolling_std
+        processed_data[f'{feature}_normalized'] = (processed_data[feature] - rolling_mean) / rolling_std
 
         # Min-Max Scaling to range -1 to 1 using rolling window 
         # rolling_min = processed_data[f'{feature}_Normalized'].rolling(window=20).min()

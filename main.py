@@ -31,24 +31,25 @@ def main():
 
     parameters = {
         "starting_month": "2016-1",
-        "ending_month": "2020-6",
+        "ending_month": "2021-1",
         "train_months": 3,
         "test_months": 3,
         "trade_months": 3,
         "num_ppo": 0,
-        "num_a2c": 32,
-        "training_rounds_per_contender": 300,
-        "timsteps_between_check": 100,
+        "num_a2c": 5,
+        "training_rounds_per_contender": 1,
+        "timesteps_between_check": 30000,
         "starting_cash": 1000000,
-        "ent_coef": 0.1,
-        "buy_action_space": "discrete", # Doesn't work yet
-        "sell_action_space": "discrete", # Doesn't work yet
-        'validation_parameter': "sharpe",
+        "ent_coef": 0,
+        "verbose": True,
+        "buy_sell_action_space": "discrete", 
+        'validation_parameter': "simple returns",
         'trading_times': 'any',
-        "indicators": ["Close_Normalized", "MACD_Normalized", "RSI_Normalized", "CCI_Normalized", "CMF_Normalized", "OBV_Normalized", "SMA_20_Normalized", "Bollinger_Mid_Normalized", "ATR_Normalized"],
+        "indicators": ["close_normalized", 'macd_normalized', 'rsi_normalized', 'cci_normalized', "adx_normalized"],
         "fees": 0, # Doesn't work yet
-        # "tickers": ["spy", "sh", "eem", "eum", "efa", "efz", "fxi", "yxi", "iev", "epv", "ewz"]
-        "tickers": ["spy", "sh", "eem", "eum", "efa", "efz", "fxi", "iev", "epv", "ewz"]
+        "tickers": ["spy"]#, "eem", "fxi", "efa", "iev", "ewz"]
+        # "efz", "fxi", "yxi", "iev", "epv", "ewz"]
+        # "tickers": ["spy", "eem"]
     }
 
     cash = parameters["starting_cash"]
@@ -113,10 +114,10 @@ def main():
             seed = int(random.random() * 100000)
             if i < int(parameters["num_a2c"]):
                 contender_name = f"{trade_window_folder_name}/models/A2C_{i}"
-                p = multiprocessing.Process(target=ModelTools.train, args=("A2C", seed, train_data, test_data, parameters, contender_name, contenders, logger))
+                p = multiprocessing.Process(target=ModelTools.train, args=("A2C", seed, train_data, test_data, trade_data, parameters, contender_name, contenders, logger))
             else:
                 contender_name = f"{trade_window_folder_name}/models/PPO_{i}"
-                p = multiprocessing.Process(target=ModelTools.train, args=("PPO", seed, train_data, test_data, parameters, contender_name, contenders, logger))
+                p = multiprocessing.Process(target=ModelTools.train, args=("PPO", seed, train_data, test_data, trade_data, parameters, contender_name, contenders, logger))
             p.start()
             processes.append(p)
 
@@ -153,8 +154,8 @@ def main():
 
     logger.print_out(f"\nFinished run in {(dt.datetime.now() - run_start_time).seconds} seconds.\n")
 
-    ModelTools.print_stats_from_history(combined_history)
-    ModelTools.plot_history(combined_history)
+    ModelTools.print_stats_from_history(combined_history, parameters)
+    ModelTools.plot_history(combined_history, parameters)
 
 if __name__ == "__main__":
     main()

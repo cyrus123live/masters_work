@@ -1,5 +1,6 @@
 import ModelTools
 import sys
+import json
 import yfinance as yf
 
 # run_directory = 'runs/2024-10-11-22-08-51'
@@ -38,12 +39,28 @@ import yfinance as yf
 
 # run_directory = 'runs/2024-10-21-19-22-20' # First portfolio test with 4 stocks, lightly negative sloped return
 # run_directory = 'runs/2024-10-21-19-35-14' # Portfolio with 6 stocks, profitable until 2020, big max drawdown
+run_directory = 'runs/2024-10-22-13-03-43' # Portfolio with just SPY, 0.98 sharpe, with 7.5 annual return and -9 max drawdown
+# run_directory = 'runs/2024-10-3-20-28-32'
+# run_directory = "runs/2024-10-24-17-42-09"
+# run_directory = "runs/2024-10-24-18-15-21"
+# run_directory = 'runs/2024-10-24-21-36-25' # 2016-2018 portfolio is worst performing asset with 3 month discrete, close only
+run_directory = 'runs/2024-10-24-22-19-04'
+run_directory = 'runs/2024-10-24-22-46-44'
+run_directory = 'runs/2024-10-24-23-16-42' # Terrible spy performance
+run_directory = 'runs/2024-10-27-14-00-55'
+run_directory = 'runs/2024-10-27-21-57-19' # First gam test (fail)
+run_directory = 'runs/2024-10-28-11-43-27' # PPO's trained in one long round each, very flat and positive result
 
 if len(sys.argv) > 1:
     run_directory = sys.argv[1]
 
 history = ModelTools.combine_trade_window_histories(run_directory)
+with open(f"{run_directory}/parameters.json", 'r') as f:
+    parameters = json.loads(f.readline())
+
+# Parse history closes from string
+history["closes"] = [[float(i) for i in history["closes"].iloc[i].replace("[", "").replace("]", "").strip().split(",")] for i in range(len(history["closes"]))]
 
 ModelTools.print_parameters(run_directory)
-ModelTools.print_stats_from_history(history)
-ModelTools.plot_history(history)
+ModelTools.print_stats_from_history(history, parameters)
+ModelTools.plot_history(history, parameters)

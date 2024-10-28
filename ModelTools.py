@@ -17,6 +17,9 @@ import random
 import numpy as np
 import torch
 import os
+import colorsys
+import re
+import pickle
 
 class Logger():
     def __init__(self, run_folder_name):
@@ -63,7 +66,7 @@ def make_dir(name):
     os.chmod(name, 0o755)
 
 def read_history_from_file(name):
-    return pd.read_csv(name + ".csv", parse_dates=['timestamp'], index_col='timestamp')
+    return pd.read_csv(name + ".csv", parse_dates=['date'], index_col='date')
 
 def write_history_to_file(history, name="test"):
     history.to_csv(name + ".csv")
@@ -107,20 +110,25 @@ def get_max_drawdown(history, col):
     return drawdown.min()
 
 
-def print_stats_from_history(history):
+def print_stats_from_history(history, parameters):
 
     print(f"\nRun Statistics for run [{history.index[0]}, {history.index[-1]}]:\n")
-    
-    # sharpe, volatility = get_sharpe_and_volatility(history, 'close')
-    # cumulative, annual = get_cumulative_and_annual_returns(history, 'close')
-    # max_drawdown = get_max_drawdown(history, 'close')
 
-    # print(f"Buy and Hold Strategy:\n")
-    # print(f"- Cumulative return: {cumulative * 100:.2f}%")
-    # print(f"- Annual return: {annual * 100:.2f}%")
-    # print(f"- Annual volatility: {volatility * 100:.2f}%")
-    # print(f"- Sharpe ratio: {sharpe:.2f}")
-    # print(f"- Max drawdown: {max_drawdown * 100:.2f}%")
+    stats = pd.DataFrame(index=history["closes"].index)
+    for i, ticker in enumerate(parameters["tickers"]):
+        ticker_history = pd.DataFrame(index=history["closes"].index)
+        ticker_history["close"] = [float(history["closes"].iloc[j][i]) for j in range(len(history["closes"]))]
+    
+        sharpe, volatility = get_sharpe_and_volatility(ticker_history, 'close')
+        cumulative, annual = get_cumulative_and_annual_returns(ticker_history, 'close')
+        max_drawdown = get_max_drawdown(ticker_history, 'close')
+
+        print(f"\n\n{ticker} Buy and Hold Strategy:\n")
+        print(f"- Cumulative return: {cumulative * 100:.2f}%")
+        print(f"- Annual return: {annual * 100:.2f}%")
+        print(f"- Annual volatility: {volatility * 100:.2f}%")
+        print(f"- Sharpe ratio: {sharpe:.2f}")
+        print(f"- Max drawdown: {max_drawdown * 100:.2f}%")
     
     sharpe, volatility = get_sharpe_and_volatility(history, 'portfolio_value')
     cumulative, annual = get_cumulative_and_annual_returns(history, 'portfolio_value')
@@ -135,19 +143,36 @@ def print_stats_from_history(history):
 
     print("\n")
 
-def plot_history(history):
-    to_plot = pd.DataFrame(index=history.index)
-    # to_plot['close'] = history["close"] / history.iloc[0]["close"]
-    to_plot['portfolio'] = history["portfolio_value"] / history.iloc[0]["portfolio_value"]
+def get_distinct_colors(n):
+    """
+    Generate n visually distinct colors using the HSV color space.
+    """
+    hues = [i / n for i in range(n)]
+    random.shuffle(hues)  # Shuffle to add randomness
+    colors = [colorsys.hsv_to_rgb(hue, 0.3, 0.9) for hue in hues]
+    return colors
+
+def plot_history(history, parameters):
 
     figure = plt.figure()
     p = figure.add_subplot()
+    i = 0
 
-    # p.plot(to_plot['close'], label="Stock Movement")
+    to_plot = pd.DataFrame(index=history.index)
+    if "closes" in history.columns:
+        colours = get_distinct_colors(len(history["closes"].iloc[0]))
+        for i in range(len(history["closes"].iloc[0])):
+            close_data = pd.DataFrame(index=history["closes"].index)
+            close_data["close"] = [float(history["closes"].iloc[j][i]) for j in range(len(history["closes"]))]
+            to_plot[f'close_{i}'] = [float(c) for c in close_data["close"] / float(history["closes"].iloc[0][i])]
+            p.plot(to_plot[f'close_{i}'], label=f"{parameters['tickers'][i]} Movement", color=colours[i])
+    else:
+        to_plot['close'] = history["close"] / history.iloc[0]["close"]
+        p.plot(to_plot['close'], label="Stock Movement")
+    to_plot['portfolio'] = history["portfolio_value"] / history.iloc[0]["portfolio_value"]
     p.plot(to_plot['portfolio'], label="Portfolio Value")
     # [p.axvline(x = i, color = 'b') for i in pd.date_range(history.index[0], history.index[-1], freq='QS')]
     p.legend()
-
     plt.show()
 
 
@@ -168,7 +193,7 @@ def test_model(model, test_data, parameters, cash = 0):
     return pd.DataFrame(history, index=test_data[0].index)
 
     # "PPO", seed, train_data, test_data, parameters, contender_name, contenders, logger
-def train(model_type, seed, train_data, test_data, parameters, contender_name, contenders, logger):
+def train(model_type, seed, train_data, test_data, trade_data, parameters, contender_name, contenders, logger):
 
     random.seed(seed)
     np.random.seed(seed)
@@ -184,31 +209,45 @@ def train(model_type, seed, train_data, test_data, parameters, contender_name, c
     else:
         model = PPO("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=parameters["ent_coef"])
 
-    return train_model(model, train_data, test_data, parameters["training_rounds_per_contender"], contender_name, contenders, logger, parameters)
+    return train_model(model, train_data, test_data, trade_data, parameters["training_rounds_per_contender"], contender_name, contenders, logger, parameters)
 
-def train_model(model, train_data, test_data, training_rounds_per_contender, contender_name, contenders, logger, parameters):
+def train_model(model, train_data, test_data, trade_data, training_rounds_per_contender, contender_name, contenders, logger, parameters):
 
     model = model
     best_model = model
     best_score = 0
     score = 0
 
-    logger.print_out("Started training a model")
+    # Load the GAM model
+    with open('gam_model.pkl', 'rb') as model_file:
+        loaded_gam = pickle.load(model_file)
 
-    if parameters["timsteps_between_check"] > 0:
+    # Load the scaler
+    with open('scaler.pkl', 'rb') as scaler_file:
+        loaded_scaler = pickle.load(scaler_file)
+
+    logger.print_out("Started training a model")
+    
+
+    if parameters["timesteps_between_check"] > 0:
     
         for i in range(training_rounds_per_contender):
 
-            model.learn(total_timesteps=parameters["timsteps_between_check"], progress_bar=False, reset_num_timesteps=False)
+            model.learn(total_timesteps=parameters["timesteps_between_check"], progress_bar=False, reset_num_timesteps=False)
+            test_history = test_model(model, test_data, parameters)
+            sharpe, _ = get_sharpe_and_volatility(test_history, 'portfolio_value')
             if parameters['validation_parameter'] == 'sharpe':
-                score, _ = get_sharpe_and_volatility(test_model(model, test_data, parameters), 'portfolio_value')
+                score = sharpe
+            elif parameters["validation_parameter"] == "gam":
+                score = loaded_gam.predict(loaded_scaler.transform([[sharpe, i + 1]]))[0]
             else:
-                score = test_model(model, test_data, parameters).iloc[-1]["portfolio_value"] 
+                score = test_history.iloc[-1]["portfolio_value"] 
             if score > best_score:
                 best_model = model
                 best_score = score
 
-            # logger.print_out(f"    - Ended scoring round {i + 1}/{training_rounds_per_contender} with score {score:.2f}")
+            if parameters["verbose"] == True:
+                logger.print_out(f"    - Ended scoring round {i + 1}/{training_rounds_per_contender} with score {score:.2f}, sharpe: {sharpe:.2f}, trading score: {test_model(model, trade_data, parameters).iloc[-1]['portfolio_value']:.2f}, trading sharpe: {get_sharpe_and_volatility(test_model(model, trade_data, parameters), 'portfolio_value')[0]:.2f}")
 
             # logger.print_out(f"    - Ended training round {i + 1}/{training_rounds_per_contender} with score {best_score:.2f}")
 
@@ -216,7 +255,7 @@ def train_model(model, train_data, test_data, training_rounds_per_contender, con
          for i in range(training_rounds_per_contender):
 
             model.learn(total_timesteps=train_data.shape[0] - 1, progress_bar=False, reset_num_timesteps=False)
-            # model.learn(total_timesteps=parameters["timsteps_between_check"], progress_bar=False, reset_num_timesteps=False)
+            # model.learn(total_timesteps=parameters["timesteps_between_check"], progress_bar=False, reset_num_timesteps=False)
             if parameters['validation_parameter'] == 'sharpe':
                 score, _ = get_sharpe_and_volatility(test_model(model, test_data, parameters), 'portfolio_value')
             else:
@@ -225,7 +264,7 @@ def train_model(model, train_data, test_data, training_rounds_per_contender, con
                 best_model = model
                 best_score = score
 
-            # logger.print_out(f"    - Ended scoring round {i + 1}/{(train_data.shape[0] - 1) // parameters['timsteps_between_check']} with score {score:.2f}")
+            # logger.print_out(f"    - Ended scoring round {i + 1}/{(train_data.shape[0] - 1) // parameters['timesteps_between_check']} with score {score:.2f}")
 
     if not len(contenders) > 1 or round(float(best_score), 2) > max([c["score"] for c in contenders]):
         best_model.save(contender_name)
