@@ -13,6 +13,47 @@ from dotenv import load_dotenv
 import os
 from stockstats import StockDataFrame as Sdf
 
+def calculate_turbulence(data, parameters):
+    df_price_pivot = pd.DataFrame(index = data[0].index)
+    for i, tic in enumerate(data):
+        df_price_pivot[parameters["tickers"][i]] = tic["close"]
+
+    start = 252  # Start after one trading year
+    turbulence_index = [0] * start
+    unique_date = df_price_pivot.index.unique()
+    count = 0
+
+    # Loop over each date starting from 'start'
+    for i in range(start, len(unique_date)):
+        current_price = df_price_pivot.loc[unique_date[i]].values
+        hist_price = df_price_pivot.loc[unique_date[0:i]]
+
+        # Compute the historical covariance matrix
+        cov_temp = hist_price.cov()
+        # Handle potential singular matrix
+        cov_inv = np.linalg.pinv(cov_temp)
+        # Compute the difference between current price and historical mean
+        current_temp = current_price - hist_price.mean().values
+        # Calculate Mahalanobis distance
+        temp = current_temp.dot(cov_inv).dot(current_temp.T)
+        if temp > 0:
+            count += 1
+            if count > 2:
+                turbulence_temp = temp
+            else:
+                # Avoid large outlier due to initial calculations
+                turbulence_temp = 0
+        else:
+            turbulence_temp = 0
+        turbulence_index.append(turbulence_temp)
+
+    # Create a DataFrame with the turbulence index
+    turbulence_index = pd.DataFrame({
+        'datadate': df_price_pivot.index,
+        'turbulence': turbulence_index
+    })
+    return turbulence_index
+
 # Technical Indicators by Chatgpt --------------------
 
 def calculate_williams_r(data, window=14):

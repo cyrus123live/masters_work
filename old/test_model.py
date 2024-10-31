@@ -12,5 +12,4 @@ with open(f"{run_folder}/parameters.json", 'r') as f:
     parameters = json.load(f)
 
 model = A2C.load(model_name)
-
 ModelTools.plot_history(ModelTools.test_model(model, StockData.get_consecutive_months(dt.datetime(year=17, month=1, day=1), 36, parameters), parameters), parameters)

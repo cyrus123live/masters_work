@@ -51,6 +51,30 @@ run_directory = 'runs/2024-10-27-14-00-55'
 run_directory = 'runs/2024-10-27-21-57-19' # First gam test (fail)
 run_directory = 'runs/2024-10-28-11-43-27' # PPO's trained in one long round each, very flat and positive result
 
+run_directory = 'runs/2024-10-28-13-37-00' # First successful (sharpe ratio 1.6 up until later part of 2018) daily model, trading SPY with 10 A2C 10 PPO 3/3/3, 1 round of 100000, ensemble obs with discrete action space (occasionally takes a hit (see 2018 10-12 ) due to randomness in relationship between validation and trade score)  (also, massive drawdown in start of 2020 due to lack of turbulence index)
+run_directory = 'runs/2024-10-28-16-11-10' # Exact same setup as above but failed twice, exemplifying issue
+run_directory = 'runs/2024-10-28-18-03-24' # 2/6/2 with sharpe, very small consistent returns
+run_directory = 'runs/2024-10-28-18-26-33' # 2/6/2 backwards with simple returns, trading and testing aren't correlated, lots of flatness
+run_directory = 'runs/2024-10-28-19-15-50' # 2/6/2 backwards with sharpe
+run_directory = 'runs/2024-10-28-20-56-34' # No test A2C rounds, successful
+run_directory = 'runs/2024-10-28-21-36-31' # Trying again to see if it's luck
+
+run_directory = 'runs/2024-10-29-13-37-16' # Note: weird cash infusion here
+run_directory = 'runs/2024-10-29-13-48-59' # really good result with 3/3 35000 A2C but saved crazy action vector
+
+run_directory = 'runs/2024-10-29-18-39-34' # First successful portfolio run, Dow Jones 4 A2C's, a little sketchy but overall seems good
+# Got this in final interval of 2018: Ended scoring round 1/1 with score 1161106.10, sharpe: 4.61, trading score: 793843.46, trading sharpe: -3.55
+# Not so good, got hit with another one: Ended scoring round 1/1 with score 1252885.24, sharpe: 4.95, trading score: 743485.45, trading sharpe: -1.92
+run_directory = 'runs/2024-10-29-20-43-55' # A fail with one A2C model, ensemble's hyperparameters
+
+run_directory = 'runs/2024-10-30-12-58-09' # A full copy ensemble run, 1.45 at start of 2019. Finished with 0.91
+# Hyperparameters from https://github.com/AI4Finance-Foundation/FinRL-Meta/blob/master/examples/FinRL_Ensemble_StockTrading_ICAIF_2020.ipynb, except timesteps from original ensemble 
+# Note: Should try 10,000/10,000 timesteps from there too 
+
+run_directory = 'runs/2024-10-30-17-55-25' # Cleaned up ensemble with ipynb timesteps in addition to kwargs, added turbulence, going crazyyy with 1.65 as of ending interval of 2018
+# Mysterious cash injection with unchanging stock array, but this doesn't seem to affect portfolio_value
+# Ended with 0.8 because turbulence didn't initiate
+
 if len(sys.argv) > 1:
     run_directory = sys.argv[1]
 

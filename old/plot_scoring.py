@@ -21,7 +21,7 @@ scoring_testing = {
     "scores": [],
     "trading_scores": []
 }
-with open("scoring.txt", 'r') as f:
+with open("scoring_2.txt", 'r') as f:
     for line in f.readlines():
         scoring["rounds"].append(int(line.split("/")[0].split(" ")[-1]))
         scoring["scores"].append(float(line.split(",")[0].split(" ")[-1]))
@@ -40,12 +40,12 @@ p = figure.add_subplot()
 
 to_plot = pd.DataFrame(index=scoring["rounds"])
 to_plot["scores"] = scoring["scores"]
-to_plot["trading_scores"] = scoring["trading_scores"] 
+to_plot["trading_scores_1"] = scoring["trading_scores"]
 # to_plot["trading_scores"] = to_plot["trading_scores"] - scoring["trading_scores"].iloc[-1]
 # to_plot["trading_scores"] = to_plot["trading_scores"] / to_plot["trading_scores"].mean()
 
 p.plot(to_plot['scores'], label="scores")
-p.plot(to_plot['trading_scores'], label="trading_scores")
+p.plot(to_plot['trading_scores_1'], label="trading_scores 1")
 
 p.legend()
 plt.show()

@@ -8,22 +8,31 @@ import sys
 api_key = os.getenv('ALPHA_KEY')
 api_key = "OZTJNCRFTEZJ7O0P"
 print(api_key)
-ticker = sys.argv[1]
 
-url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={ticker}&outputsize=full&apikey={api_key}"
-data = json.loads(requests.get(url).content.decode('utf-8'))
-df = pd.DataFrame.from_dict(data["Time Series (Daily)"], orient="index").iloc[::-1]
+for t in ["spy", "eem", "fxi", "efa", "iev", "ewz", "efz", "fxi", "yxi", "iev", "epv", "ewz", "tlt"]:
+    
+# ticker = sys.argv[1]
+    ticker = t
 
-to_save = pd.DataFrame(index = df.index)
-df.index.name = "timestamp"
-to_save["close"] = df["4. close"].to_list()
-to_save["open"] = df["1. open"].to_list()
-to_save["high"] = df["2. high"].to_list()
-to_save["low"] = df["3. low"].to_list()
-to_save["volume"] = df["5. volume"].to_list()
+    print(ticker)
 
-print(to_save)
-to_save.to_csv(f"stock_data/{ticker.lower()}_daily.csv")
+    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol={ticker}&outputsize=full&apikey={api_key}"
+    data = json.loads(requests.get(url).content.decode('utf-8'))
+    print(data)
+    df = pd.DataFrame.from_dict(data["Time Series (Daily)"], orient="index").iloc[::-1]
+
+    to_save = pd.DataFrame(index = df.index)
+    df.index.name = "timestamp"
+    df["adjustment_factor"] = df['5. adjusted close'].astype(float) / df['4. close'].astype(float)
+    to_save["close"] = df["adjustment_factor"].astype(float) * df['4. close'].astype(float)
+
+    to_save["open"] = df["adjustment_factor"].astype(float) * df["1. open"].astype(float)
+    to_save["high"] = df["adjustment_factor"].astype(float) * df["2. high"].astype(float)
+    to_save["low"] = df["adjustment_factor"].astype(float) * df["3. low"].astype(float)
+    to_save["volume"] = df["6. volume"]
+
+    print(to_save)
+    to_save.to_csv(f"stock_data/{ticker.lower()}_daily.csv")
 quit()
 
 ticker = "SH"

@@ -31,25 +31,31 @@ def main():
 
     parameters = {
         "starting_month": "2016-1",
-        "ending_month": "2021-1",
+        "ending_month": "2020-6",
         "train_months": 3,
         "test_months": 3,
         "trade_months": 3,
         "num_ppo": 0,
-        "num_a2c": 5,
+        "num_a2c": 1,
+        "test_before_train": False,
         "training_rounds_per_contender": 1,
-        "timesteps_between_check": 30000,
+        # "timesteps_between_check_PPO": 100000,
+        # "timesteps_between_check_A2C": 35000,
+        "timesteps_between_check_PPO": 10000, # From ensemble ipynb
+        "timesteps_between_check_A2C": 10000, # From ensemble ipynb
         "starting_cash": 1000000,
-        "ent_coef": 0,
+        "ent_coef": 0.1,
         "verbose": True,
-        "buy_sell_action_space": "discrete", 
-        'validation_parameter': "simple returns",
-        'trading_times': 'any',
+        "buy_sell_action_space": "continuous", 
+        'validation_parameter': "sharpe",
         "indicators": ["close_normalized", 'macd_normalized', 'rsi_normalized', 'cci_normalized', "adx_normalized"],
         "fees": 0, # Doesn't work yet
-        "tickers": ["spy"]#, "eem", "fxi", "efa", "iev", "ewz"]
-        # "efz", "fxi", "yxi", "iev", "epv", "ewz"]
-        # "tickers": ["spy", "eem"]
+        # "turbulence_threshold": 140, # From original ensemble code
+        "turbulence_threshold": 201.71875, # From ensemble ipynb
+        # "turbulence_threshold": 1,
+        # "tickers": ["spy"]
+        # "tickers": ["spy", "eem", "fxi", "efa", "iev", "ewz", "efz", "fxi", "yxi", "iev", "epv", "ewz"]
+        "tickers": ['AXP', 'AAPL', 'VZ', 'BA', 'CAT', 'JPM', 'CVX', 'KO', 'DIS', 'DD', 'XOM', 'HD', 'INTC', 'IBM', 'JNJ', 'MCD', 'MRK', 'MMM', 'NKE', 'PFE', 'PG', 'UNH', 'RTX', 'WMT', 'WBA', 'MSFT', 'CSCO', 'TRV', 'GS', 'V']
     }
 
     cash = parameters["starting_cash"]
@@ -62,6 +68,10 @@ def main():
     with open(f"{run_folder_name}/parameters.json", 'w') as f:
         json.dump(parameters, f)
 
+    turbulence = pd.read_csv("turbulence.csv")
+    turbulence["turbulence"] = pd.to_numeric(turbulence["turbulence"])
+    turbulence["datadate"] = pd.to_datetime(turbulence["datadate"])
+
     # Main Loop
     starting_month = dt.datetime(year=int(parameters["starting_month"].split("-")[0]), month=int(parameters["starting_month"].split("-")[1]), day=1)
     ending_month = dt.datetime(year=int(parameters["ending_month"].split("-")[0]), month=int(parameters["ending_month"].split("-")[1]), day=1)
@@ -71,11 +81,19 @@ def main():
         trade_window_start_time = dt.datetime.now()
 
         # Figure out monthly windows for trading, testing, and training
-        train_window_start = trade_window_start - pd.DateOffset(months=parameters["test_months"] + parameters["train_months"])
-        train_window_end = trade_window_start - pd.DateOffset(months=parameters["test_months"], days=1)
-        validation_window_start = train_window_start + pd.DateOffset(months=parameters["train_months"])
-        validation_window_end = trade_window_start - pd.DateOffset(days=1)
-        trade_window_end = trade_window_start + pd.DateOffset(months=parameters["trade_months"]) - pd.DateOffset(days=1)
+        if parameters["test_before_train"]:
+            validation_window_start = trade_window_start - pd.DateOffset(months=parameters["train_months"] + parameters["test_months"])
+            validation_window_end = trade_window_start - pd.DateOffset(months=parameters["train_months"], days=1)
+            train_window_start = trade_window_start - pd.DateOffset(months=parameters["train_months"])
+            train_window_end = trade_window_start - pd.DateOffset(days=1)
+            trade_window_end = trade_window_start + pd.DateOffset(months=parameters["trade_months"]) - pd.DateOffset(days=1)
+
+        else:
+            train_window_start = trade_window_start - pd.DateOffset(months=parameters["test_months"] + parameters["train_months"])
+            train_window_end = trade_window_start - pd.DateOffset(months=parameters["test_months"], days=1)
+            validation_window_start = train_window_start + pd.DateOffset(months=parameters["train_months"])
+            validation_window_end = trade_window_start - pd.DateOffset(days=1)
+            trade_window_end = trade_window_start + pd.DateOffset(months=parameters["trade_months"]) - pd.DateOffset(days=1)
         
         # Printout dates
         logger.print_out(f"\nStarting round with trading window [{trade_window_start.strftime('%Y-%m-%d')}, {trade_window_end.strftime('%Y-%m-%d')}],")
@@ -114,10 +132,10 @@ def main():
             seed = int(random.random() * 100000)
             if i < int(parameters["num_a2c"]):
                 contender_name = f"{trade_window_folder_name}/models/A2C_{i}"
-                p = multiprocessing.Process(target=ModelTools.train, args=("A2C", seed, train_data, test_data, trade_data, parameters, contender_name, contenders, logger))
+                p = multiprocessing.Process(target=ModelTools.train, args=("A2C", seed, train_data, test_data, trade_data, parameters, contender_name, contenders, logger, turbulence))
             else:
                 contender_name = f"{trade_window_folder_name}/models/PPO_{i}"
-                p = multiprocessing.Process(target=ModelTools.train, args=("PPO", seed, train_data, test_data, trade_data, parameters, contender_name, contenders, logger))
+                p = multiprocessing.Process(target=ModelTools.train, args=("PPO", seed, train_data, test_data, trade_data, parameters, contender_name, contenders, logger, turbulence))
             p.start()
             processes.append(p)
 
@@ -139,9 +157,10 @@ def main():
         # Get best contender and trade with them
         logger.print_out(f"\nStarting trading with model with score {contenders[0]['score']:.2f}")
         if "PPO" in contenders[0]['model']:
-            trade_window_history = ModelTools.test_model(PPO.load(contenders[0]['model']), trade_data, parameters, cash)
+            model = PPO.load(contenders[0]['model'])
         elif "A2C" in contenders[0]['model']:
-            trade_window_history = ModelTools.test_model(A2C.load(contenders[0]['model']), trade_data, parameters, cash)
+            model = A2C.load(contenders[0]['model'])
+        trade_window_history = ModelTools.test_model(model, trade_data, parameters, cash, turbulence, True)
         ModelTools.write_history_to_file(trade_window_history, f"{trade_window_folder_name}/trade_window_history")
 
         # Update running balance

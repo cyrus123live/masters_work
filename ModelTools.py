@@ -20,6 +20,9 @@ import os
 import colorsys
 import re
 import pickle
+import time
+import copy
+
 
 class Logger():
     def __init__(self, run_folder_name):
@@ -172,28 +175,32 @@ def plot_history(history, parameters):
     to_plot['portfolio'] = history["portfolio_value"] / history.iloc[0]["portfolio_value"]
     p.plot(to_plot['portfolio'], label="Portfolio Value")
     # [p.axvline(x = i, color = 'b') for i in pd.date_range(history.index[0], history.index[-1], freq='QS')]
-    p.legend()
+    # p.legend()
     plt.show()
 
 
 # Returns a history dataframe using TradingEnv
-def test_model(model, test_data, parameters, cash = 0):
-    if cash==0:
-        cash = parameters['starting_cash']
+def test_model(model, test_data, parameters, cash, turbulence, trading = False):
 
-    test_env = Monitor(TradingEnv(test_data, parameters, cash))
+    test_env = Monitor(TradingEnv(test_data, parameters, cash, turbulence, trading))
     obs, info = test_env.reset()
-    history = [test_env.render()]
+    history = [copy.deepcopy(test_env.render())]
+    # model.set_env(test_env)
     for i in range(test_data[0].shape[0] - 1):
 
         action = model.predict(obs, deterministic=True)[0]
         obs, reward, terminated, truncated, info = test_env.step(action)
-        history.append(test_env.render())
+        render = test_env.render()
+        # print(f"render: {render}\n")
+        history.append(copy.deepcopy(render)) 
+        # print(f"history: {history[-1]}\n")
+        # time.sleep(5)
 
+    # print(history)
     return pd.DataFrame(history, index=test_data[0].index)
 
     # "PPO", seed, train_data, test_data, parameters, contender_name, contenders, logger
-def train(model_type, seed, train_data, test_data, trade_data, parameters, contender_name, contenders, logger):
+def train(model_type, seed, train_data, test_data, trade_data, parameters, contender_name, contenders, logger, turbulence):
 
     random.seed(seed)
     np.random.seed(seed)
@@ -203,71 +210,46 @@ def train(model_type, seed, train_data, test_data, trade_data, parameters, conte
     torch.backends.cudnn.deterministic = False
     torch.backends.cudnn.benchmark = True
 
-    train_env = Monitor(TradingEnv(train_data, parameters, parameters['starting_cash']))
+    # Note, kwargs from ensemble ipynb
+    train_env = Monitor(TradingEnv(train_data, parameters, parameters['starting_cash'], turbulence))
     if model_type == "A2C":
-        model = A2C("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=parameters["ent_coef"])
+        model = A2C("MlpPolicy", train_env, verbose=0, seed=seed, n_steps= 5, ent_coef= 0.005, learning_rate= 0.0007) #ent_coef=parameters["ent_coef"])
     else:
-        model = PPO("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=parameters["ent_coef"])
+        model = PPO("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef= 0.01, n_steps= 2048, learning_rate= 0.00025, batch_size= 128) #ent_coef=parameters["ent_coef"])
 
-    return train_model(model, train_data, test_data, trade_data, parameters["training_rounds_per_contender"], contender_name, contenders, logger, parameters)
+    return train_model(model_type, model, train_data, test_data, trade_data, parameters["training_rounds_per_contender"], contender_name, contenders, logger, parameters, turbulence)
 
-def train_model(model, train_data, test_data, trade_data, training_rounds_per_contender, contender_name, contenders, logger, parameters):
+def train_model(model_type, model, train_data, test_data, trade_data, training_rounds_per_contender, contender_name, contenders, logger, parameters, turbulence):
 
     model = model
-    best_model = model
-    best_score = 0
+    best_score = -100
     score = 0
-
-    # Load the GAM model
-    with open('gam_model.pkl', 'rb') as model_file:
-        loaded_gam = pickle.load(model_file)
-
-    # Load the scaler
-    with open('scaler.pkl', 'rb') as scaler_file:
-        loaded_scaler = pickle.load(scaler_file)
 
     logger.print_out("Started training a model")
     
+    for i in range(training_rounds_per_contender):
 
-    if parameters["timesteps_between_check"] > 0:
-    
-        for i in range(training_rounds_per_contender):
+        if model_type == "A2C":
+            model.learn(total_timesteps=parameters["timesteps_between_check_A2C"], progress_bar=False, reset_num_timesteps=False)
+        else:
+            model.learn(total_timesteps=parameters["timesteps_between_check_PPO"], progress_bar=False, reset_num_timesteps=False)
+        test_history = test_model(model, test_data, parameters, parameters['starting_cash'], turbulence)
+        sharpe, _ = get_sharpe_and_volatility(test_history, 'portfolio_value')
+        if parameters['validation_parameter'] == 'sharpe':
+            score = sharpe
+        elif parameters["validation_parameter"] == "last":
+            score = i + 1
+        else:
+            score = test_history.iloc[-1]["portfolio_value"] 
+        if score > best_score:
+            model.save(contender_name)
+            best_score = score
 
-            model.learn(total_timesteps=parameters["timesteps_between_check"], progress_bar=False, reset_num_timesteps=False)
-            test_history = test_model(model, test_data, parameters)
-            sharpe, _ = get_sharpe_and_volatility(test_history, 'portfolio_value')
-            if parameters['validation_parameter'] == 'sharpe':
-                score = sharpe
-            elif parameters["validation_parameter"] == "gam":
-                score = loaded_gam.predict(loaded_scaler.transform([[sharpe, i + 1]]))[0]
-            else:
-                score = test_history.iloc[-1]["portfolio_value"] 
-            if score > best_score:
-                best_model = model
-                best_score = score
+        if parameters["verbose"] == True:
+            logger.print_out(f"    - Ended scoring round {i + 1}/{training_rounds_per_contender} with score {score:.2f}, sharpe: {sharpe:.2f}, trading score: {test_model(model, trade_data, parameters, parameters['starting_cash'], turbulence, True).iloc[-1]['portfolio_value']:.2f}, trading sharpe: {get_sharpe_and_volatility(test_model(model, trade_data, parameters, parameters['starting_cash'], turbulence, True), 'portfolio_value')[0]:.2f}")
 
-            if parameters["verbose"] == True:
-                logger.print_out(f"    - Ended scoring round {i + 1}/{training_rounds_per_contender} with score {score:.2f}, sharpe: {sharpe:.2f}, trading score: {test_model(model, trade_data, parameters).iloc[-1]['portfolio_value']:.2f}, trading sharpe: {get_sharpe_and_volatility(test_model(model, trade_data, parameters), 'portfolio_value')[0]:.2f}")
+        # logger.print_out(f"    - Ended training round {i + 1}/{training_rounds_per_contender} with score {best_score:.2f}")
 
-            # logger.print_out(f"    - Ended training round {i + 1}/{training_rounds_per_contender} with score {best_score:.2f}")
-
-    else:
-         for i in range(training_rounds_per_contender):
-
-            model.learn(total_timesteps=train_data.shape[0] - 1, progress_bar=False, reset_num_timesteps=False)
-            # model.learn(total_timesteps=parameters["timesteps_between_check"], progress_bar=False, reset_num_timesteps=False)
-            if parameters['validation_parameter'] == 'sharpe':
-                score, _ = get_sharpe_and_volatility(test_model(model, test_data, parameters), 'portfolio_value')
-            else:
-                score = test_model(model, test_data, parameters).iloc[-1]["portfolio_value"] 
-            if score > best_score:
-                best_model = model
-                best_score = score
-
-            # logger.print_out(f"    - Ended scoring round {i + 1}/{(train_data.shape[0] - 1) // parameters['timesteps_between_check']} with score {score:.2f}")
-
-    if not len(contenders) > 1 or round(float(best_score), 2) > max([c["score"] for c in contenders]):
-        best_model.save(contender_name)
     contenders.append({
         "model": contender_name,
         "score": round(float(best_score), 2)
