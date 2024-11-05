@@ -9,33 +9,33 @@ api_key = os.getenv('ALPHA_KEY')
 api_key = "OZTJNCRFTEZJ7O0P"
 print(api_key)
 
-for t in ["spy", "eem", "fxi", "efa", "iev", "ewz", "efz", "fxi", "yxi", "iev", "epv", "ewz", "tlt"]:
+# for t in ["spy", "eem", "fxi", "efa", "iev", "ewz", "efz", "fxi", "yxi", "iev", "epv", "ewz", "tlt"]:
     
 # ticker = sys.argv[1]
-    ticker = t
+#     ticker = t
 
-    print(ticker)
+#     print(ticker)
 
-    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol={ticker}&outputsize=full&apikey={api_key}"
-    data = json.loads(requests.get(url).content.decode('utf-8'))
-    print(data)
-    df = pd.DataFrame.from_dict(data["Time Series (Daily)"], orient="index").iloc[::-1]
+#     url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol={ticker}&outputsize=full&apikey={api_key}"
+#     data = json.loads(requests.get(url).content.decode('utf-8'))
+#     print(data)
+#     df = pd.DataFrame.from_dict(data["Time Series (Daily)"], orient="index").iloc[::-1]
 
-    to_save = pd.DataFrame(index = df.index)
-    df.index.name = "timestamp"
-    df["adjustment_factor"] = df['5. adjusted close'].astype(float) / df['4. close'].astype(float)
-    to_save["close"] = df["adjustment_factor"].astype(float) * df['4. close'].astype(float)
+#     to_save = pd.DataFrame(index = df.index)
+#     df.index.name = "timestamp"
+#     df["adjustment_factor"] = df['5. adjusted close'].astype(float) / df['4. close'].astype(float)
+#     to_save["close"] = df["adjustment_factor"].astype(float) * df['4. close'].astype(float)
 
-    to_save["open"] = df["adjustment_factor"].astype(float) * df["1. open"].astype(float)
-    to_save["high"] = df["adjustment_factor"].astype(float) * df["2. high"].astype(float)
-    to_save["low"] = df["adjustment_factor"].astype(float) * df["3. low"].astype(float)
-    to_save["volume"] = df["6. volume"]
+#     to_save["open"] = df["adjustment_factor"].astype(float) * df["1. open"].astype(float)
+#     to_save["high"] = df["adjustment_factor"].astype(float) * df["2. high"].astype(float)
+#     to_save["low"] = df["adjustment_factor"].astype(float) * df["3. low"].astype(float)
+#     to_save["volume"] = df["6. volume"]
 
-    print(to_save)
-    to_save.to_csv(f"stock_data/{ticker.lower()}_daily.csv")
-quit()
+#     print(to_save)
+#     to_save.to_csv(f"stock_data/{ticker.lower()}_daily.csv")
+# quit()
 
-ticker = "SH"
+ticker = "eem"
 ticker_folder_name = ticker.lower() + "_data"
 os.makedirs(f"stock_data/{ticker_folder_name}/", exist_ok=True)
 for year in range(0, 24):

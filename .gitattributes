@@ -1,0 +1,2 @@
+stock_data/crypto/* filter=lfs diff=lfs merge=lfs -text
+stock_data/btc_data.csv filter=lfs diff=lfs merge=lfs -text

@@ -54,108 +54,9 @@ def calculate_turbulence(data, parameters):
     })
     return turbulence_index
 
-# Technical Indicators by Chatgpt --------------------
-
-def calculate_williams_r(data, window=14):
-    highest_high = data['High'].rolling(window=window).max()
-    lowest_low = data['Low'].rolling(window=window).min()
-    williams_r = -100 * (highest_high - data['Close']) / (highest_high - lowest_low)
-    return williams_r
-def calculate_cmf(data, window=20):
-    mf_multiplier = ((data['Close'] - data['Low']) - (data['High'] - data['Close'])) / (data['High'] - data['Low'])
-    mf_volume = mf_multiplier * data['Volume']
-    cmf = mf_volume.rolling(window=window).sum() / data['Volume'].rolling(window=window).sum()
-    return cmf
-def calculate_cci(data, window=20):
-    tp = (data['High'] + data['Low'] + data['Close']) / 3
-    sma_tp = tp.rolling(window=window).mean()
-    mean_dev = tp.rolling(window=window).apply(lambda x: np.mean(np.abs(x - np.mean(x))))
-    cci = (tp - sma_tp) / (0.015 * mean_dev)
-    return cci
-def calculate_obv(data):
-    obv = [0]
-    for i in range(1, len(data)):
-        if data['Close'].iloc[i] > data['Close'].iloc[i - 1]:
-            obv.append(obv[-1] + data['Volume'].iloc[i])
-        elif data['Close'].iloc[i] < data['Close'].iloc[i - 1]:
-            obv.append(obv[-1] - data['Volume'].iloc[i])
-        else:
-            obv.append(obv[-1])
-    data['OBV'] = obv
-    return data['OBV']
-def calculate_stochastic_oscillator(data, k_window=14, d_window=3):
-    lowest_low = data['Low'].rolling(window=k_window).min()
-    highest_high = data['High'].rolling(window=k_window).max()
-    percent_k = 100 * (data['Close'] - lowest_low) / (highest_high - lowest_low)
-    percent_d = percent_k.rolling(window=d_window).mean()
-    return percent_k, percent_d
-def calculate_atr(data, window=14):
-    high_low = data['High'] - data['Low']
-    high_close = np.abs(data['High'] - data['Close'].shift())
-    low_close = np.abs(data['Low'] - data['Close'].shift())
-    tr = high_low.combine(high_close, max).combine(low_close, max)
-    atr = tr.rolling(window=window).mean()
-    return atr
-def calculate_bollinger_bands(data, window=20, num_std=2):
-    sma = data['Close'].rolling(window=window).mean()
-    std = data['Close'].rolling(window=window).std()
-    upper_band = sma + (std * num_std)
-    lower_band = sma - (std * num_std)
-    return sma, upper_band, lower_band
-def calculate_rsi(data, window=14):
-    delta = data['Close'].diff()
-    gain = (delta.where(delta > 0, 0)).fillna(0)
-    loss = (-delta.where(delta < 0, 0)).fillna(0)
-    avg_gain = gain.rolling(window=window).mean()
-    avg_loss = loss.rolling(window=window).mean()
-    rs = avg_gain / avg_loss
-    rsi = 100 - (100 / (1 + rs))
-    return rsi
-def calculate_macd(data, slow=26, fast=12, signal=9):
-    ema_slow = data['Close'].ewm(span=slow, adjust=False).mean()
-    ema_fast = data['Close'].ewm(span=fast, adjust=False).mean()
-    macd = ema_fast - ema_slow
-    signal_line = macd.ewm(span=signal, adjust=False).mean()
-    histogram = macd - signal_line
-    return macd, signal_line, histogram
-
-def calculate_adx(data, window=14):
-    # Calculate True Range (TR)
-    high_low = data['High'] - data['Low']
-    high_close = np.abs(data['High'] - data['Close'].shift())
-    low_close = np.abs(data['Low'] - data['Close'].shift())
-    tr = high_low.combine(high_close, max).combine(low_close, max)
-
-    # Calculate Directional Movement (+DM, -DM)
-    plus_dm = data['High'].diff()
-    minus_dm = data['Low'].diff()
-
-    # Assign positive and negative directional movements
-    plus_dm[plus_dm < 0] = 0
-    minus_dm[minus_dm > 0] = 0
-
-    # Smooth the True Range, +DM, and -DM
-    atr = tr.rolling(window=window).mean()
-    smoothed_plus_dm = plus_dm.rolling(window=window).mean()
-    smoothed_minus_dm = abs(minus_dm.rolling(window=window).mean())
-
-    # Calculate +DI and -DI
-    plus_di = 100 * (smoothed_plus_dm / atr)
-    minus_di = 100 * (smoothed_minus_dm / atr)
-
-    # Calculate the Directional Index (DX)
-    dx = 100 * (abs(plus_di - minus_di) / (plus_di + minus_di))
-
-    # Calculate the ADX by smoothing the DX
-    adx = dx.rolling(window=window).mean()
-
-    return adx
-
-
-# ---------------------------------------------------- 
-
-
 def process_data(data):
+
+    # print(data)
 
     data.index.name = "date"
     stock = Sdf.retype(data.copy())
@@ -167,34 +68,14 @@ def process_data(data):
     processed_data['adx'] = stock['dx_30']
     processed_data['close'] = data["close"]
 
-    processed_data["Close"] = data["close"]
-    processed_data["Change"] = data["close"].diff()
-    processed_data["D_HL"] = data["high"] - data["low"]
+    # processed_data["Close"] = data["close"]
+    # processed_data["Change"] = data["close"].diff()
+    # processed_data["D_HL"] = data["high"] - data["low"]
 
     # For Spread Calculation --------------
     # processed_data["Close_Mean"] = processed_data["Close"].rolling(window=20).mean()
     # processed_data["Close_STD"] = processed_data["Close"].rolling(window=20).std()
     # -------------------------------------
-    
-    # Technical indicators by Chatgpt ----- 
-    # processed_data["High"] = data["high"]
-    # processed_data["Low"] = data["low"]
-    # processed_data["Open"] = data["open"]
-    # processed_data["Volume"] = data["volume"]
-    # processed_data.dropna(inplace=True)
-
-    # processed_data['SMA_20'] = processed_data['Close'].rolling(window=20).mean()
-    # processed_data['EMA_20'] = processed_data['Close'].ewm(span=20, adjust=False).mean()
-    # processed_data['RSI'] = calculate_rsi(processed_data)
-    # processed_data['ATR'] = calculate_atr(processed_data)
-    # processed_data['MACD'], processed_data['MACD_Signal'], _ = calculate_macd(processed_data)
-    # processed_data['Bollinger_Mid'], processed_data['Bollinger_Upper'], processed_data['Bollinger_Lower'] = calculate_bollinger_bands(processed_data)
-    # processed_data['CCI'] = calculate_cci(processed_data)
-    # processed_data['Williams_%R'] = calculate_williams_r(processed_data)
-    # processed_data['CMF'] = calculate_cmf(processed_data)
-    # processed_data['OBV'] = calculate_obv(processed_data)
-    # processed_data['ADX'] = calculate_adx(processed_data)
-    #  --------------------------
 
     for feature in processed_data.columns:
         # Calculate rolling mean and std
@@ -211,6 +92,8 @@ def process_data(data):
 
     processed_data.dropna(inplace=True)
 
+    # print(processed_data)
+
     return processed_data
 
 def get_min_max_values():
@@ -226,16 +109,14 @@ def get_daily_csv(year, month, ticker):
     return df[df.index.strftime("%Y-%m") == f"20{year:02d}-{month:02d}"]
     
 
-def get_month_csv(year, month):
-    folder_name = "spy_data"
+def get_month_csv(year, month, ticker):
+    folder_name = f"{ticker}_data"
 
-    data = pd.read_csv(f"stock_data/{folder_name}/20{year:02d}-{month:02d}.csv", index_col="timestamp").iloc[::-1]
+    data = pd.read_csv(f"stock_data/{folder_name}/20{year:02d}-{month:02d}.csv", index_col="timestamp")
     data.index = pd.to_datetime(data.index)
 
     return data
 
-def get_month(year, month):
-    return process_data(get_month_csv(year, month))
 
 def get_month_hourly(year, month):
     return process_data(
@@ -246,6 +127,16 @@ def get_month_hourly(year, month):
         close=('close', 'last'),
         ).dropna()
     )
+
+def get_month(year, month, tickers = ["spy"]):
+    output = []
+    for ticker in tickers:
+        output.append(process_data(get_month_csv(year, month, ticker).dropna().iloc[::-1]).dropna())
+
+    # print(output)
+
+    return output
+
 
 def get_month_daily(year, month, tickers):
     output = []
@@ -328,7 +219,10 @@ def get_random_train_data(num_months):
 def get_consecutive_months(starting_month, num_months, parameters):
     frames = [[] for i in range(len(parameters["tickers"]))]
     for i in range(num_months):
-        data = get_month_daily((starting_month + pd.DateOffset(months=i)).year % 100, (starting_month + pd.DateOffset(months=i)).month, parameters["tickers"])
+        if parameters["t"] == "daily":
+            data = get_month_daily((starting_month + pd.DateOffset(months=i)).year % 100, (starting_month + pd.DateOffset(months=i)).month, parameters["tickers"])
+        else: 
+            data = get_month((starting_month + pd.DateOffset(months=i)).year % 100, (starting_month + pd.DateOffset(months=i)).month, parameters["tickers"])
         for i, d in enumerate(data):
             frames[i].append(d)   
     return [pd.concat(f) for f in frames]

@@ -113,25 +113,43 @@ def get_max_drawdown(history, col):
     return drawdown.min()
 
 
+def get_buy_hold_strategy(history, parameters):
+    equal_parts_shares = [(parameters["starting_cash"] / len(parameters["tickers"])) / history.iloc[0]["closes"][i] for i in range(len(parameters["tickers"]))]
+    buy_hold_history = copy.deepcopy(history)
+    buy_hold_history["portfolio_value"] = [sum([history.iloc[j]["closes"][i] * equal_parts_shares[i] for i in range(len(parameters["tickers"]))]) for j in range(len(history))]  
+    return buy_hold_history
+
+
 def print_stats_from_history(history, parameters):
 
     print(f"\nRun Statistics for run [{history.index[0]}, {history.index[-1]}]:\n")
 
-    stats = pd.DataFrame(index=history["closes"].index)
-    for i, ticker in enumerate(parameters["tickers"]):
-        ticker_history = pd.DataFrame(index=history["closes"].index)
-        ticker_history["close"] = [float(history["closes"].iloc[j][i]) for j in range(len(history["closes"]))]
+    buy_hold_history = get_buy_hold_strategy(history, parameters)
+    # for i, ticker in enumerate(parameters["tickers"]):
+    #     ticker_history = pd.DataFrame(index=history["closes"].index)
+    #     ticker_history["close"] = [float(history["closes"].iloc[j][i]) for j in range(len(history["closes"]))]
     
-        sharpe, volatility = get_sharpe_and_volatility(ticker_history, 'close')
-        cumulative, annual = get_cumulative_and_annual_returns(ticker_history, 'close')
-        max_drawdown = get_max_drawdown(ticker_history, 'close')
+    #     sharpe, volatility = get_sharpe_and_volatility(ticker_history, 'close')
+    #     cumulative, annual = get_cumulative_and_annual_returns(ticker_history, 'close')
+    #     max_drawdown = get_max_drawdown(ticker_history, 'close')
 
-        print(f"\n\n{ticker} Buy and Hold Strategy:\n")
-        print(f"- Cumulative return: {cumulative * 100:.2f}%")
-        print(f"- Annual return: {annual * 100:.2f}%")
-        print(f"- Annual volatility: {volatility * 100:.2f}%")
-        print(f"- Sharpe ratio: {sharpe:.2f}")
-        print(f"- Max drawdown: {max_drawdown * 100:.2f}%")
+    #     print(f"\n\n{ticker} Buy and Hold Strategy:\n")
+    #     print(f"- Cumulative return: {cumulative * 100:.2f}%")
+    #     print(f"- Annual return: {annual * 100:.2f}%")
+    #     print(f"- Annual volatility: {volatility * 100:.2f}%")
+    #     print(f"- Sharpe ratio: {sharpe:.2f}")
+    #     print(f"- Max drawdown: {max_drawdown * 100:.2f}%")
+
+    sharpe, volatility = get_sharpe_and_volatility(buy_hold_history, 'portfolio_value')
+    cumulative, annual = get_cumulative_and_annual_returns(buy_hold_history, 'portfolio_value')
+    max_drawdown = get_max_drawdown(buy_hold_history, 'portfolio_value')
+
+    print(f"\nBuy and Hold Strategy:\n")
+    print(f"- Cumulative return: {cumulative * 100:.2f}%")
+    print(f"- Annual return: {annual * 100:.2f}%")
+    print(f"- Annual volatility: {volatility * 100:.2f}%")
+    print(f"- Sharpe ratio: {sharpe:.2f}")
+    print(f"- Max drawdown: {max_drawdown * 100:.2f}%")
     
     sharpe, volatility = get_sharpe_and_volatility(history, 'portfolio_value')
     cumulative, annual = get_cumulative_and_annual_returns(history, 'portfolio_value')
@@ -147,12 +165,9 @@ def print_stats_from_history(history, parameters):
     print("\n")
 
 def get_distinct_colors(n):
-    """
-    Generate n visually distinct colors using the HSV color space.
-    """
     hues = [i / n for i in range(n)]
     random.shuffle(hues)  # Shuffle to add randomness
-    colors = [colorsys.hsv_to_rgb(hue, 0.3, 0.9) for hue in hues]
+    colors = [colorsys.hsv_to_rgb(hue, 0.1, 0.9) for hue in hues]
     return colors
 
 def plot_history(history, parameters):
@@ -168,14 +183,19 @@ def plot_history(history, parameters):
             close_data = pd.DataFrame(index=history["closes"].index)
             close_data["close"] = [float(history["closes"].iloc[j][i]) for j in range(len(history["closes"]))]
             to_plot[f'close_{i}'] = [float(c) for c in close_data["close"] / float(history["closes"].iloc[0][i])]
-            p.plot(to_plot[f'close_{i}'], label=f"{parameters['tickers'][i]} Movement", color=colours[i])
+            p.plot(to_plot[f'close_{i}'], color=colours[i])
     else:
         to_plot['close'] = history["close"] / history.iloc[0]["close"]
         p.plot(to_plot['close'], label="Stock Movement")
+    
+    buy_hold_history = get_buy_hold_strategy(history, parameters)
+
+    to_plot['buy_hold'] = buy_hold_history["portfolio_value"] / buy_hold_history.iloc[0]["portfolio_value"]
     to_plot['portfolio'] = history["portfolio_value"] / history.iloc[0]["portfolio_value"]
     p.plot(to_plot['portfolio'], label="Portfolio Value")
+    p.plot(to_plot['buy_hold'], label="Buy and Hold Strategy", color="black")
     # [p.axvline(x = i, color = 'b') for i in pd.date_range(history.index[0], history.index[-1], freq='QS')]
-    # p.legend()
+    p.legend()
     plt.show()
 
 
@@ -246,7 +266,7 @@ def train_model(model_type, model, train_data, test_data, trade_data, training_r
             best_score = score
 
         if parameters["verbose"] == True:
-            logger.print_out(f"    - Ended scoring round {i + 1}/{training_rounds_per_contender} with score {score:.2f}, sharpe: {sharpe:.2f}, trading score: {test_model(model, trade_data, parameters, parameters['starting_cash'], turbulence, True).iloc[-1]['portfolio_value']:.2f}, trading sharpe: {get_sharpe_and_volatility(test_model(model, trade_data, parameters, parameters['starting_cash'], turbulence, True), 'portfolio_value')[0]:.2f}")
+            logger.print_out(f"    - Ended scoring round {i + 1}/{training_rounds_per_contender} with score {score:.2f}, ending value: {test_history.iloc[-1]['portfolio_value'] :.2f}, trading value: {test_model(model, trade_data, parameters, parameters['starting_cash'], turbulence, True).iloc[-1]['portfolio_value']:.2f}, trading sharpe: {get_sharpe_and_volatility(test_model(model, trade_data, parameters, parameters['starting_cash'], turbulence, True), 'portfolio_value')[0]:.2f}")
 
         # logger.print_out(f"    - Ended training round {i + 1}/{training_rounds_per_contender} with score {best_score:.2f}")
 

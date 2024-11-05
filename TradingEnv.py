@@ -16,7 +16,7 @@ class TradingEnv(gym.Env):
 
         self.starting_cash = starting_cash
         self.parameters = parameters
-        self.k = [int(self.starting_cash / df['Close'].iloc[0]) for df in data]
+        self.k = [int(self.starting_cash / df['close'].iloc[0]) for df in data]
         
         # Define action and observation spaces
         if parameters["buy_sell_action_space"] == "continuous":
@@ -60,22 +60,23 @@ class TradingEnv(gym.Env):
         #     print("cash:", self.cash)
             # print("action:", action)
 
-        turbulence = self.turbulence[self.turbulence["datadate"] == self.data[0].index[self.current_step]]["turbulence"].iloc[0]
-        if turbulence >= self.parameters["turbulence_threshold"] and self.trading:
-            portfolio_value = sum([df["Close"].iloc[self.current_step] * self.stock[i] for i, df in enumerate(self.data)]) + self.cash
-            self.cash = portfolio_value
-            self.stock = [0 for i in range(len(self.data))]
-            print(f"Turbulence activated on date: {self.data[0].index[self.current_step]}")
-            return
+        if self.trading:
+            turbulence = self.turbulence[self.turbulence["datadate"] == self.data[0].index[self.current_step]]["turbulence"].iloc[0]
+            if turbulence >= self.parameters["turbulence_threshold"]:
+                portfolio_value = sum([df["close"].iloc[self.current_step] * self.stock[i] for i, df in enumerate(self.data)]) + self.cash
+                self.cash = portfolio_value
+                self.stock = [0 for i in range(len(self.data))]
+                print(f"Turbulence activated on date: {self.data[0].index[self.current_step]}")
+                return
 
         if self.parameters["buy_sell_action_space"] == "discrete":
 
             decision = int(action)
-            portfolio_value = sum([df["Close"].iloc[self.current_step] * self.stock[i] for i, df in enumerate(self.data)]) + self.cash
+            portfolio_value = sum([df["close"].iloc[self.current_step] * self.stock[i] for i, df in enumerate(self.data)]) + self.cash
             self.stock = [0 for i in range(len(self.data))]
             self.cash = 0
             if decision > 0:
-                self.stock[decision - 1] = portfolio_value / self.data[decision - 1]["Close"].iloc[self.current_step]
+                self.stock[decision - 1] = portfolio_value / self.data[decision - 1]["close"].iloc[self.current_step]
             else:
                 self.cash = portfolio_value
 
@@ -86,15 +87,15 @@ class TradingEnv(gym.Env):
                 # Naive solution from ensemble: go through list and update based on buy and sell decisions, not taking into account that money may be ran out by the time we get to last stocks in list
                 if action[i] < 0 and self.stock[i] > 0:
                     to_sell = min(self.stock[i], abs(action[i]) * self.k[i])
-                    self.cash += to_sell * df["Close"].iloc[self.current_step] * (1 - self.c_selling)
+                    self.cash += to_sell * df["close"].iloc[self.current_step] * (1 - self.c_selling)
                     self.stock[i] -= to_sell
                     # print(f"sold {to_sell} of stock {i}, now have {self.cash} cash and {self.stock[i]} stock")
                 
                 # Buy if action is positive and cash is available
                 elif action[i] > 0 and self.cash > 0:
-                    max_stock = self.cash / df["Close"].iloc[self.current_step]
+                    max_stock = self.cash / df["close"].iloc[self.current_step]
                     to_buy = min(max_stock, action[i] * self.k[i])
-                    self.cash -= to_buy * df["Close"].iloc[self.current_step] * (1 + self.c_buying)
+                    self.cash -= to_buy * df["close"].iloc[self.current_step] * (1 + self.c_buying)
                     self.stock[i] += to_buy
                     # print(f"bought {to_buy} of stock {i}, now have {self.cash} cash and {self.stock[i]} stock")
 
@@ -113,7 +114,7 @@ class TradingEnv(gym.Env):
         self.current_step += 1
         
         # Calculate portfolio value at the new step
-        new_total_value = sum([df["Close"].iloc[self.current_step] * self.stock[i] for i, df in enumerate(self.data)]) + self.cash
+        new_total_value = sum([df["close"].iloc[self.current_step] * self.stock[i] for i, df in enumerate(self.data)]) + self.cash
 
         # Reward scaling from ensemble
         reward = (new_total_value - self.total_value) * 1e-4
@@ -142,6 +143,6 @@ class TradingEnv(gym.Env):
 
     def render(self, mode='human', close=False):
         if mode == 'human':
-            output = {"portfolio_value": self.total_value, "cash": self.cash, "shares": self.stock, "closes": [float(df["Close"].iloc[self.current_step]) for df in self.data], "last action": self.last_action}
+            output = {"portfolio_value": self.total_value, "cash": self.cash, "shares": self.stock, "closes": [float(df["close"].iloc[self.current_step]) for df in self.data], "last action": self.last_action}
             # print("From env: " + str(output) + "\n")
             return output

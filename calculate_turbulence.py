@@ -33,7 +33,7 @@ starting_month = dt.datetime(year=int(parameters["starting_month"].split("-")[0]
 ending_month = dt.datetime(year=int(parameters["ending_month"].split("-")[0]), month=int(parameters["ending_month"].split("-")[1]), day=1)
 total_months = math.ceil((ending_month - starting_month).days / 30.44)
 
-turbulence = StockData.calculate_turbulence(StockData.get_consecutive_months(starting_month - pd.DateOffset(months = parameters["train_months"] + parameters["test_months"]), total_months, parameters), parameters)
+turbulence = StockData.calculate_turbulence(StockData.get_consecutive_months(starting_month - pd.DateOffset(months = parameters["train_months"] + parameters["test_months"]), total_months + parameters["train_months"] + parameters["test_months"] + 1, parameters), parameters)
 
 turbulence.to_csv("turbulence.csv")
 
