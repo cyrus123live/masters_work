@@ -76,16 +76,16 @@ run_directory = 'runs/2024-10-30-17-55-25' # Cleaned up ensemble with ipynb time
 # Ended with 0.8 because turbulence didn't initiate
 
 # Everything is fixed, let's do multiple runs of 1/1:
-run_directory = 'runs/2024-10-31-12-59-00' # First run is an abject failure
-run_directory = 'runs/2024-10-31-13-41-34' # Second run failure
-run_directory = 'runs/2024-10-31-14-12-49' # Third run, started weak but beat buy and hold by the end
-run_directory = 'runs/2024-10-31-15-01-05' # Fourth run, started a failure but came back to 1.18 with -17.5% by end
-run_directory = 'runs/2024-10-31-15-49-29' # Fifth run, 830000 by end of first interval
+# run_directory = 'runs/2024-10-31-12-59-00' # First run is an abject failure
+# run_directory = 'runs/2024-10-31-13-41-34' # Second run failure
+# run_directory = 'runs/2024-10-31-14-12-49' # Third run, started weak but beat buy and hold by the end
+# run_directory = 'runs/2024-10-31-15-01-05' # Fourth run, started a failure but came back to 1.18 with -17.5% by end
+# run_directory = 'runs/2024-10-31-15-49-29' # Fifth run, 830000 by end of first interval
 
-run_directory = 'runs/2024-10-31-20-12-58' # Going back to minutely
-run_directory = 'runs/2024-11-02-00-28-38' # BTC
-run_directory = 'runs/2024-11-02-11-18-28' # BTC 1/1/1, need to do it again with more trained models, chose a bad one in 2021-06
-run_directory = 'runs/2024-11-03-22-20-23' # BTC again, this time 16/16 quit early because macbook ran out of space
+# run_directory = 'runs/2024-10-31-20-12-58' # Going back to minutely
+# run_directory = 'runs/2024-11-02-00-28-38' # BTC
+# run_directory = 'runs/2024-11-02-11-18-28' # BTC 1/1/1, need to do it again with more trained models, chose a bad one in 2021-06
+# run_directory = 'runs/2024-11-03-22-20-23' # BTC again, this time 16/16 quit early because macbook ran out of space
 
 if len(sys.argv) > 1:
     run_directory = sys.argv[1]
