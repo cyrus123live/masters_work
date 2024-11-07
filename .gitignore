@@ -2,3 +2,4 @@ venv
 runs
 alphavantage.py
 .env
+stock_data/crypto
