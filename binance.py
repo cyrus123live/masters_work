@@ -12,6 +12,7 @@ import os
 #     "LTCUSDT",
 #     "BCHUSDT"
 # ]
+print("hi")
 symbols = [
     # "BTCUSDT",
     # "ETHUSDT",
