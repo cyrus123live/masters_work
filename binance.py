@@ -4,27 +4,35 @@ import pandas as pd
 import time
 import os
 
+# symbols = [
+#     "BTCUSDT",
+#     "ETHUSDT",
+#     "DOGEUSDT",
+#     "XMRUSDT",
+#     "LTCUSDT",
+#     "BCHUSDT"
+# ]
 symbols = [
-    "BTCUSDT",
-    "ETHUSDT",
+    # "BTCUSDT",
+    # "ETHUSDT",
     "DOGEUSDT",
     "XMRUSDT",
     "LTCUSDT",
     "BCHUSDT"
 ]
 i = 0
-for symbol in symbols:
-    os.makedirs(f"stock_data/{symbol}_data", exist_ok=True)
-    df = pd.read_csv(f"stock_data/crypto/{symbol}_data.csv", index_col="timestamp")
-    df.index = pd.to_datetime(df.index)
-    for year in range(df.index[0].year, df.index[-1].year + 1):
-        year_data = df[df.index.year == year]
-        for month in range(year_data.index[0].month, year_data.index[-1].month + 1):
-            month_data = year_data[year_data.index.month == month]
-            month_data.sort_index(ascending=True)
-            month_data.iloc[::-1].to_csv(f'stock_data/{symbol}_data/{month_data.index[0].year}-{month_data.index[0].month:02d}.csv', header=True)
-    i += 1
-quit()
+# for symbol in symbols:
+#     os.makedirs(f"stock_data/{symbol}_data", exist_ok=True)
+#     df = pd.read_csv(f"stock_data/crypto/{symbol}_data.csv", index_col="timestamp")
+#     df.index = pd.to_datetime(df.index)
+#     for year in range(df.index[0].year, df.index[-1].year + 1):
+#         year_data = df[df.index.year == year]
+#         for month in range(year_data.index[0].month, year_data.index[-1].month + 1):
+#             month_data = year_data[year_data.index.month == month]
+#             month_data.sort_index(ascending=True)
+#             month_data.iloc[::-1].to_csv(f'stock_data/{symbol}_data/{month_data.index[0].year}-{month_data.index[0].month:02d}.csv', header=True)
+#     i += 1
+# quit()
 
 def parse_and_save(data, header = False):
     minute_data = pd.DataFrame(data)
@@ -55,7 +63,7 @@ for symbol in symbols:
     try:
 
         parse_and_save(requests.get(url, params={
-            'symbol': 'BTCUSDT',
+            'symbol': f'{symbol}',
             'startTime': int(dt.datetime.timestamp(dt.datetime(year=2020, month=1, day=1) + dt.timedelta(hours=(24 * day) - 8)) * 1000),
             'endTime': int(dt.datetime.timestamp(dt.datetime(year=2020, month=1, day=1) + dt.timedelta(hours=(24 * day) + 4)) * 1000),
             'interval': '1m',
@@ -63,7 +71,7 @@ for symbol in symbols:
         }).json(), True)
 
         parse_and_save(requests.get(url, params={
-            'symbol': 'BTCUSDT',
+            'symbol': f'{symbol}',
             'startTime': int(dt.datetime.timestamp(dt.datetime(year=2020, month=1, day=1) + dt.timedelta(hours=(24 * day) + 4)) * 1000),
             'endTime': int(dt.datetime.timestamp(dt.datetime(year=2020, month=1, day=1) + dt.timedelta(hours=(24 * day) + 16)) * 1000),
             'interval': '1m',
@@ -73,7 +81,7 @@ for symbol in symbols:
         for day in range(1, (dt.datetime(year=2024, month=11, day=1) - dt.datetime(year=2020, month=1, day=1)).days):
 
             parse_and_save(requests.get(url, params={
-                'symbol': 'BTCUSDT',
+                'symbol': f'{symbol}',
                 'startTime': int(dt.datetime.timestamp(dt.datetime(year=2020, month=1, day=1) + dt.timedelta(hours=(24 * day) - 8)) * 1000),
                 'endTime': int(dt.datetime.timestamp(dt.datetime(year=2020, month=1, day=1) + dt.timedelta(hours=(24 * day) + 4)) * 1000),
                 'interval': '1m',
@@ -81,7 +89,7 @@ for symbol in symbols:
             }).json())
             
             parse_and_save(requests.get(url, params={
-                'symbol': 'BTCUSDT',
+                'symbol': f'{symbol}',
                 'startTime': int(dt.datetime.timestamp(dt.datetime(year=2020, month=1, day=1) + dt.timedelta(hours=(24 * day) + 4)) * 1000),
                 'endTime': int(dt.datetime.timestamp(dt.datetime(year=2020, month=1, day=1) + dt.timedelta(hours=(24 * day) + 16)) * 1000),
                 'interval': '1m',

@@ -87,6 +87,8 @@ run_directory = 'runs/2024-10-30-17-55-25' # Cleaned up ensemble with ipynb time
 # run_directory = 'runs/2024-11-02-11-18-28' # BTC 1/1/1, need to do it again with more trained models, chose a bad one in 2021-06
 # run_directory = 'runs/2024-11-03-22-20-23' # BTC again, this time 16/16 quit early because macbook ran out of space
 
+run_directory = 'runs/2024-11-07-20-24-02' # Crypto portfolio
+
 if len(sys.argv) > 1:
     run_directory = sys.argv[1]
 
