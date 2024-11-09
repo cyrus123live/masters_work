@@ -92,8 +92,8 @@ def process_data(data):
 
     processed_data.ffill(inplace=True)
     processed_data.dropna(inplace=True)
-
-    return processed_data[(processed_data.index.hour != 0) | (processed_data.index.minute > 25)]
+    
+    return processed_data.iloc[40 - processed_data.index[0].minute:]
 
 def get_min_max_values():
     historical_data = get_consecutive_months(dt.datetime(year=2000, month=1, day=1), 120) # get 2000-2010 data 
