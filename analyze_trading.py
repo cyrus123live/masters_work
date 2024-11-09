@@ -12,7 +12,7 @@ import StockData
 import ModelTools
 
 MODEL_NAME = "PPO_109"
-FOLDER_NAME = "2024-11-07"
+FOLDER_NAME = "2024-11-08"
 
 # Returns a history dataframe
 # def test_model_manually(model, test_data = StockData.get_current_data(), starting_cash = 1000000):

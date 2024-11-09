@@ -90,11 +90,10 @@ def process_data(data):
         # rolling_max = processed_data[f'{feature}_Normalized'].rolling(window=20).max()
         # processed_data[f'{feature}_Scaled'] = -1 + 2 * (processed_data[f'{feature}_Normalized'] - rolling_min) / (rolling_max - rolling_min)
 
+    processed_data.ffill(inplace=True)
     processed_data.dropna(inplace=True)
 
-    # print(processed_data)
-
-    return processed_data
+    return processed_data[(processed_data.index.hour != 0) | (processed_data.index.minute > 25)]
 
 def get_min_max_values():
     historical_data = get_consecutive_months(dt.datetime(year=2000, month=1, day=1), 120) # get 2000-2010 data 
