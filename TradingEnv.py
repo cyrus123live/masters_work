@@ -114,7 +114,7 @@ class TradingEnv(gym.Env):
         self.current_step += 1
         
         # Calculate portfolio value at the new step
-        new_total_value = sum([df["close"].iloc[self.current_step] * self.stock[i] for i, df in enumerate(self.data)]) + self.cash
+        new_total_value = sum([df["close"].iloc[self.current_step] * self.stock[i] for i, df in enumerate(self.data)]) + self.cash       
 
         # Reward scaling from ensemble
         reward = (new_total_value - self.total_value) * 1e-4

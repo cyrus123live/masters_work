@@ -133,8 +133,6 @@ def get_month(year, month, tickers = ["spy"]):
     for ticker in tickers:
         output.append(process_data(get_month_csv(year, month, ticker).dropna().iloc[::-1]).dropna())
 
-    # print(output)
-
     return output
 
 

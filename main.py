@@ -30,7 +30,7 @@ def main():
     #     multiprocessing_cores = int(sys.argv[1])
 
     parameters = {
-        "starting_month": "2021-1",
+        "starting_month": "2021-2",
         "ending_month": "2024-6",
         "train_months": 1,
         "test_months": 1,
@@ -56,7 +56,7 @@ def main():
         "t": "minutely",
         # "turbulence_threshold": 201.71875, # From ensemble ipynb
         # "turbulence_threshold": 1,
-        "tickers": ["btc"]
+        "tickers": ["btc", "ETHUSDT"]
         # "tickers": ["spy", "eem", "fxi", "efa", "iev", "ewz", "efz", "fxi", "yxi", "iev", "epv", "ewz"]
         # "tickers": ['AXP', 'AAPL', 'VZ', 'BA', 'CAT', 'JPM', 'CVX', 'KO', 'DIS', 'DD', 'XOM', 'HD', 'INTC', 'IBM', 'JNJ', 'MCD', 'MRK', 'MMM', 'NKE', 'PFE', 'PG', 'UNH', 'RTX', 'WMT', 'WBA', 'MSFT', 'CSCO', 'TRV', 'GS', 'V']
     }
