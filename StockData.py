@@ -92,7 +92,7 @@ def process_data(data):
 
     processed_data.ffill(inplace=True)
     processed_data.dropna(inplace=True)
-    
+
     return processed_data.iloc[40 - processed_data.index[0].minute:]
 
 def get_min_max_values():

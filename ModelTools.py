@@ -209,17 +209,14 @@ def test_model(model, test_data, parameters, cash, turbulence, trading = False):
     # model.set_env(test_env)
     for i in range(test_data[0].shape[0] - 1):
 
-        if not True in [np.isnan(n) for n in obs]:
-            action = model.predict(obs, deterministic=True)[0]
+        action = model.predict(obs, deterministic=True)[0]
 
         obs, reward, terminated, truncated, info = test_env.step(action)
+        # if terminated or truncated:
+        #     test_env.reset()
         render = test_env.render()
-        # print(f"render: {render}\n")
         history.append(copy.deepcopy(render)) 
-        # print(f"history: {history[-1]}\n")
-        # time.sleep(5)
 
-    # print(history)
     return pd.DataFrame(history, index=test_data[0].index)
 
     # "PPO", seed, train_data, test_data, parameters, contender_name, contenders, logger

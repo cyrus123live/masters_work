@@ -49,7 +49,17 @@ class TradingEnv(gym.Env):
             observations.extend(df[self.parameters['indicators']].iloc[self.current_step].to_list())
             observations.append(self.stock[i] / self.k[i])
         observations.append(self.cash / self.starting_cash)
-        return observations
+        obs = np.array(observations)
+        # print(obs)
+        # print(self.cash)
+        # print(self.stock)
+        if np.any(np.isnan(obs)) or np.any(np.isinf(obs)):
+            print(f"reseting on step: {self.current_step} out of {self.max_steps}")
+            print("error")
+            quit()
+            return self.reset()
+        return obs
+        # return observations
 
     def _take_action(self, action):
 
@@ -124,6 +134,7 @@ class TradingEnv(gym.Env):
         # Define whether the episode is finished
         terminated = self.current_step >= self.max_steps
         truncated = False
+        # truncated = self.cash <= 0
 
         # Get next observation
         obs = self._get_obs()
