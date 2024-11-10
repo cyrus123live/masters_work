@@ -13,6 +13,9 @@ from ModelTools import make_dir
 import sys
 import random
 import json
+import torch as th
+
+th.autograd.set_detect_anomaly(True)
 
 def main():
 

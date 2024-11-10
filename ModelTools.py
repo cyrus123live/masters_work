@@ -22,6 +22,7 @@ import re
 import pickle
 import time
 import copy
+from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
 
 
 class Logger():
@@ -210,7 +211,7 @@ def test_model(model, test_data, parameters, cash, turbulence, trading = False):
 
         if not True in [np.isnan(n) for n in obs]:
             action = model.predict(obs, deterministic=True)[0]
-            
+
         obs, reward, terminated, truncated, info = test_env.step(action)
         render = test_env.render()
         # print(f"render: {render}\n")
@@ -235,9 +236,11 @@ def train(model_type, seed, train_data, test_data, trade_data, parameters, conte
     # Note, kwargs from ensemble ipynb
     train_env = Monitor(TradingEnv(train_data, parameters, parameters['starting_cash'], turbulence))
     if model_type == "A2C":
-        model = A2C("MlpPolicy", train_env, verbose=0, seed=seed, n_steps= 5, ent_coef= 0.005, learning_rate= 0.0007) #ent_coef=parameters["ent_coef"])
+        # model = A2C("MlpPolicy", train_env, verbose=0, seed=seed, n_steps= 5, ent_coef= 0.005, learning_rate= 0.0007) #ent_coef=parameters["ent_coef"])
+        model = A2C("MlpPolicy", train_env, verbose=0, seed=seed) #ent_coef=parameters["ent_coef"])
     else:
-        model = PPO("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef= 0.01, n_steps= 2048, learning_rate= 0.00025, batch_size= 128) #ent_coef=parameters["ent_coef"])
+        # model = PPO("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef= 0.01, n_steps= 2048, learning_rate= 0.00025, batch_size= 128) #ent_coef=parameters["ent_coef"])
+        model = PPO("MlpPolicy", train_env, verbose=0, seed=seed) #ent_coef=parameters["ent_coef"])
 
     return train_model(model_type, model, train_data, test_data, trade_data, parameters["training_rounds_per_contender"], contender_name, contenders, logger, parameters, turbulence)
 
