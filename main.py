@@ -57,7 +57,7 @@ def main():
         # "turbulence_threshold": 201.71875, # From ensemble ipynb
         # "turbulence_threshold": 1,
         # "tickers": ["BTCUSDT", "BCHUSDT", "DOGEUSDT", "ETHUSDT", "LTCUSDT", "XMRUSDT"]
-        "tickers": ["btc"]
+        "tickers": ["BTCUSDT", "BCHUSDT", "ETHUSDT", "LTCUSDT"]
         # "tickers": ["spy", "eem", "fxi", "efa", "iev", "ewz", "efz", "fxi", "yxi", "iev", "epv", "ewz"]
         # "tickers": ['AXP', 'AAPL', 'VZ', 'BA', 'CAT', 'JPM', 'CVX', 'KO', 'DIS', 'DD', 'XOM', 'HD', 'INTC', 'IBM', 'JNJ', 'MCD', 'MRK', 'MMM', 'NKE', 'PFE', 'PG', 'UNH', 'RTX', 'WMT', 'WBA', 'MSFT', 'CSCO', 'TRV', 'GS', 'V']
     }

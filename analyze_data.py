@@ -40,7 +40,7 @@ parameters = {
 data = StockData.get_consecutive_months(dt.datetime(year=2020, month=1, day=1), 48, parameters)
 # Create a combined set of unique timestamps
 combined_index = pd.concat(data).index.unique()
-combined_index = pd.date_range(start=data[0].index[0], end=data[0].index[-1], freq='min')
+# combined_index = pd.date_range(start=data[0].index[0], end=data[0].index[-1], freq='min')
 
 # Find missing timestamps for each DataFrame
 missing_minutes = {}
