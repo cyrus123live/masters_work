@@ -34,7 +34,7 @@ parameters = {
     # "tickers": ['AXP', 'AAPL', 'VZ', 'BA', 'CAT', 'JPM', 'CVX', 'KO', 'DIS', 'DD', 'XOM', 'HD', 'INTC', 'IBM', 'JNJ', 'MCD', 'MRK', 'MMM', 'NKE', 'PFE', 'PG', 'UNH', 'RTX', 'WMT', 'WBA', 'MSFT', 'CSCO', 'TRV', 'GS', 'V']
 }
 
-data = StockData.get_consecutive_months(dt.datetime(year=2022, month=1, day=1), 12, parameters)
+data = StockData.get_consecutive_months(dt.datetime(year=2020, month=12, day=1), 3, parameters)
 # Create a combined set of unique timestamps
 combined_index = pd.concat(data).index.unique()
 

@@ -35,8 +35,8 @@ def main():
         "train_months": 1,
         "test_months": 1,
         "trade_months": 1,
-        "num_ppo": 16,
-        "num_a2c": 16,
+        "num_ppo": 0,
+        "num_a2c": 1,
         "test_before_train": False,
         "training_rounds_per_contender": 1,
         # "timesteps_between_check_PPO": 100000,
@@ -56,7 +56,8 @@ def main():
         "t": "minutely",
         # "turbulence_threshold": 201.71875, # From ensemble ipynb
         # "turbulence_threshold": 1,
-        "tickers": ["BTCUSDT", "BCHUSDT", "DOGEUSDT", "ETHUSDT", "LTCUSDT", "XMRUSDT"]
+        # "tickers": ["BTCUSDT", "BCHUSDT", "DOGEUSDT", "ETHUSDT", "LTCUSDT", "XMRUSDT"]
+        "tickers": ["BTCUSDT", "BCHUSDT", "ETHUSDT", "LTCUSDT"]
         # "tickers": ["spy", "eem", "fxi", "efa", "iev", "ewz", "efz", "fxi", "yxi", "iev", "epv", "ewz"]
         # "tickers": ['AXP', 'AAPL', 'VZ', 'BA', 'CAT', 'JPM', 'CVX', 'KO', 'DIS', 'DD', 'XOM', 'HD', 'INTC', 'IBM', 'JNJ', 'MCD', 'MRK', 'MMM', 'NKE', 'PFE', 'PG', 'UNH', 'RTX', 'WMT', 'WBA', 'MSFT', 'CSCO', 'TRV', 'GS', 'V']
     }

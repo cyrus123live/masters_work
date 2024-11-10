@@ -208,7 +208,9 @@ def test_model(model, test_data, parameters, cash, turbulence, trading = False):
     # model.set_env(test_env)
     for i in range(test_data[0].shape[0] - 1):
 
-        action = model.predict(obs, deterministic=True)[0]
+        if not True in [np.isnan(n) for n in obs]:
+            action = model.predict(obs, deterministic=True)[0]
+            
         obs, reward, terminated, truncated, info = test_env.step(action)
         render = test_env.render()
         # print(f"render: {render}\n")
