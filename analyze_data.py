@@ -31,13 +31,31 @@ parameters = {
     "t": "minutely",
     # "turbulence_threshold": 201.71875, # From ensemble ipynb
     # "turbulence_threshold": 1,
-    "tickers": ["BTCUSDT", "BCHUSDT", "ETHUSDT", "LTCUSDT"]
+    "tickers": ["BTCUSDT", "ETHUSDT", "LTCUSDT"]
     # "tickers": ["btc"]
     # "tickers": ["spy", "eem", "fxi", "efa", "iev", "ewz", "efz", "fxi", "yxi", "iev", "epv", "ewz"]
     # "tickers": ['AXP', 'AAPL', 'VZ', 'BA', 'CAT', 'JPM', 'CVX', 'KO', 'DIS', 'DD', 'XOM', 'HD', 'INTC', 'IBM', 'JNJ', 'MCD', 'MRK', 'MMM', 'NKE', 'PFE', 'PG', 'UNH', 'RTX', 'WMT', 'WBA', 'MSFT', 'CSCO', 'TRV', 'GS', 'V']
 }
 
-data = StockData.get_consecutive_months(dt.datetime(year=2020, month=1, day=1), 48, parameters)
+# for i in range(54):
+#     date = dt.datetime(year=2020, month=1, day=1) + pd.DateOffset(months=i)
+#     print(date)
+#     data = StockData.get_consecutive_months(date, 1, parameters)   
+#     combined_index = pd.concat(data).index.unique()
+#     missing_minutes = {}
+#     for j, df in enumerate(data):
+#         missing = combined_index.difference(df.index)
+#         # missing_minutes[f'DF{j}'] = missing
+#         print(missing)
+#         for t in parameters["tickers"]:
+#             print(t)
+#             new_data = pd.read_csv(f"stock_data/{t}_data/{date.strftime('%Y-%m')}.csv")
+#             for missing_time in missing:
+#                 if missing_time in new_data.index:
+#                     print(new_data.loc[missing_time])
+
+
+data = StockData.get_consecutive_months(dt.datetime(year=2020, month=1, day=1), 54, parameters)
 # Create a combined set of unique timestamps
 combined_index = pd.concat(data).index.unique()
 # combined_index = pd.date_range(start=data[0].index[0], end=data[0].index[-1], freq='min')

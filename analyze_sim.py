@@ -90,6 +90,7 @@ run_directory = 'runs/2024-10-30-17-55-25' # Cleaned up ensemble with ipynb time
 run_directory = 'runs/2024-11-07-20-24-02' # Crypto portfolio
 run_directory = 'runs/2024-11-09-21-22-17'
 run_directory = '/users/cyrusparsons/desktop/2024-11-10-08-13-34'
+run_directory = 'runs/2024-11-10-14-40-03'
 
 if len(sys.argv) > 1:
     run_directory = sys.argv[1]
