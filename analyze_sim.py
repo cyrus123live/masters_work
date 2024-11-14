@@ -95,6 +95,8 @@ run_directory = '/users/cyrusparsons/desktop/2024-11-10-08-13-34' # 8000x return
 # run_directory = 'runs/2024-11-10-23-19-47'
 # run_directory = 'runs/2024-11-11-12-15-30'
 
+run_directory = 'runs/2024-11-14-13-44-00'
+
 if len(sys.argv) > 1:
     run_directory = sys.argv[1]
 
