@@ -226,7 +226,16 @@ def get_consecutive_months(starting_month, num_months, parameters):
             data = get_month((starting_month + pd.DateOffset(months=i)).year % 100, (starting_month + pd.DateOffset(months=i)).month, parameters["tickers"])
         for i, d in enumerate(data):
             frames[i].append(d)   
-    return [pd.concat(f) for f in frames]
+
+    # Remove all data where index doesn't exist for every df
+    data = [pd.concat(f) for f in frames]
+    common_index = data[0].index
+    for df in data[1:]:
+        common_index = common_index.intersection(df.index)
+
+    data = [df.loc[common_index] for df in data]
+
+    return data
 
 def get_year(year):
     frames = []

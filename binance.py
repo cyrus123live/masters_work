@@ -4,21 +4,13 @@ import pandas as pd
 import time
 import os
 
-# symbols = [
-#     "BTCUSDT",
-#     "ETHUSDT",
-#     "DOGEUSDT",
-#     "XMRUSDT",
-#     "LTCUSDT",
-#     "BCHUSDT"
-# ]
 symbols = [
-    # "BTCUSDT",
-    # "ETHUSDT",
+    "XRPUSDT",
+    "BNBUSDT",
+    "ADAUSDC",
     "DOGEUSDT",
-    "XMRUSDT",
-    "LTCUSDT",
-    "BCHUSDT"
+    "SOLUSDT",
+    "TRXUSDT"
 ]
 i = 0
 # for symbol in symbols:
@@ -56,13 +48,6 @@ os.makedirs("stock_data/crypto/", exist_ok=True)
 
 # print([j['symbol'] for j in requests.get(url).json() if "USDT" in j['symbol']])
 # quit()
-print(requests.get(url, params={
-            'symbol': f'LTCUSDT',
-            'startTime': int(dt.datetime.timestamp(dt.datetime(year=2020, month=1, day=1) + dt.timedelta(hours=(24 * 1) - 8)) * 1000),
-            'endTime': int(dt.datetime.timestamp(dt.datetime(year=2020, month=1, day=1) + dt.timedelta(hours=(24 * 1) + 4)) * 1000),
-            'interval': '1m',
-            'limit': '1000' 
-        }).json(), True)
 
 for symbol in symbols:
     day = 0

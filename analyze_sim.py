@@ -89,8 +89,11 @@ run_directory = 'runs/2024-10-30-17-55-25' # Cleaned up ensemble with ipynb time
 
 run_directory = 'runs/2024-11-07-20-24-02' # Crypto portfolio
 run_directory = 'runs/2024-11-09-21-22-17'
-run_directory = '/users/cyrusparsons/desktop/2024-11-10-08-13-34'
-run_directory = 'runs/2024-11-10-14-40-03'
+run_directory = '/users/cyrusparsons/desktop/2024-11-10-08-13-34' # 8000x return in 4 months with 4 crypto portfolio: data must be broken
+# run_directory = 'runs/2024-11-10-14-40-03'
+# run_directory = 'runs/2024-11-10-16-18-32'
+# run_directory = 'runs/2024-11-10-23-19-47'
+# run_directory = 'runs/2024-11-11-12-15-30'
 
 if len(sys.argv) > 1:
     run_directory = sys.argv[1]
