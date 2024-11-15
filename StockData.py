@@ -91,6 +91,7 @@ def process_data(data):
         # processed_data[f'{feature}_Scaled'] = -1 + 2 * (processed_data[f'{feature}_Normalized'] - rolling_min) / (rolling_max - rolling_min)
 
     # processed_data.ffill(inplace=True)
+    processed_data.replace([np.inf, -np.inf], np.nan, inplace=True)
     processed_data.dropna(inplace=True)
 
     # return processed_data.iloc[40 - processed_data.index[0].minute:]

@@ -35,10 +35,10 @@ def main():
         "train_months": 1,
         "test_months": 1,
         "trade_months": 1,
-        "num_ppo": 4,
-        "num_a2c": 4,
+        "num_ppo": 0,
+        "num_a2c": 1,
         "test_before_train": False,
-        "training_rounds_per_contender": 1,
+        "training_rounds_per_contender": 0,
         # "timesteps_between_check_PPO": 100000,
         # "timesteps_between_check_A2C": 35000,
         # "timesteps_between_check_PPO": 10000, # From ensemble ipynb
@@ -54,13 +54,8 @@ def main():
         "turbulence_threshold": 140, # From original ensemble code
         "use_turbulence": False,
         "t": "minutely",
-        # "turbulence_threshold": 201.71875, # From ensemble ipynb
-        # "turbulence_threshold": 1,
-        # "tickers": ["BTCUSDT", "BCHUSDT", "DOGEUSDT", "ETHUSDT", "LTCUSDT", "XMRUSDT"]
-        # "tickers": ["BTCUSDT", "ETHUSDT", "LTCUSDT", "XMRUSDT"]
-        "tickers": ["BTCUSDT", "ETHUSDT", "XRPUSDT", "BNBUSDT", "TRXUSDT", "ADAUSDC", "DOGEUSDT"]
-        # "tickers": ["spy", "eem", "fxi", "efa", "iev", "ewz", "efz", "fxi", "yxi", "iev", "epv", "ewz"]
-        # "tickers": ['AXP', 'AAPL', 'VZ', 'BA', 'CAT', 'JPM', 'CVX', 'KO', 'DIS', 'DD', 'XOM', 'HD', 'INTC', 'IBM', 'JNJ', 'MCD', 'MRK', 'MMM', 'NKE', 'PFE', 'PG', 'UNH', 'RTX', 'WMT', 'WBA', 'MSFT', 'CSCO', 'TRV', 'GS', 'V']
+        "tickers": ["BTCUSDT", "ETHUSDT", "XRPUSDT", "BNBUSDT", "TRXUSDT"]
+        # "tickers": ["BTCUSDT"]
     }
 
     for _ in range(int(sys.argv[1])):
@@ -123,9 +118,12 @@ def main():
             except:
                 trade_data = test_data
 
-            # print(train_data)
-            # print(test_data)
-            # print(trade_data)
+            # TEMP: Randomize trade data
+            # trade_data = [df.sample(frac = 1) for df in trade_data]
+
+            print(train_data)
+            print(test_data)
+            print(trade_data)
 
             if not parameters["use_turbulence"]:
                 turbulence = pd.DataFrame(index = trade_data[0].index)

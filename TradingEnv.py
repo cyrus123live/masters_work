@@ -55,6 +55,7 @@ class TradingEnv(gym.Env):
         # print(self.stock)
         if np.any(np.isnan(obs)) or np.any(np.isinf(obs)):
             print(f"reseting on step: {self.current_step} out of {self.max_steps}")
+            print("Obs:", obs)
             print("error")
             quit()
             return self.reset()

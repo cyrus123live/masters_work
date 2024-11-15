@@ -96,6 +96,10 @@ run_directory = '/users/cyrusparsons/desktop/2024-11-10-08-13-34' # 8000x return
 # run_directory = 'runs/2024-11-11-12-15-30'
 
 run_directory = 'runs/2024-11-14-13-44-00'
+run_directory = 'runs/2024-11-14-16-27-53' # Large Crypto portfolio, rediculous returns 
+run_directory = 'runs/2024-11-15-10-45-24' # Zero training sanity check BTC only NOTE: error on 2023-07
+run_directory = 'runs/2024-11-15-11-23-01' # Zero training sanity check large portfolio NOTE: error on 2020-10
+run_directory = 'runs/2024-11-15-11-36-58' # Same as above, different result
 
 if len(sys.argv) > 1:
     run_directory = sys.argv[1]
