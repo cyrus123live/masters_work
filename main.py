@@ -47,7 +47,7 @@ def main():
         "timesteps_between_check_A2C": 50000, 
         "starting_cash": 1000000,
         "verbose": True,
-        "buy_sell_action_space": "discrete", 
+        "buy_sell_action_space": "continuous", 
         'validation_parameter': "sharpe",
         "indicators": ["close_normalized", 'macd_normalized', 'rsi_normalized', 'cci_normalized', "adx_normalized"],
         "fees": 0, # Doesn't work yet
