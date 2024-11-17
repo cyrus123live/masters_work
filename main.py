@@ -35,10 +35,10 @@ def main():
         "train_months": 1,
         "test_months": 1,
         "trade_months": 1,
-        "num_ppo": 0,
-        "num_a2c": 1,
+        "num_ppo": 8,
+        "num_a2c": 8,
         "test_before_train": False,
-        "training_rounds_per_contender": 0,
+        "training_rounds_per_contender": 1,
         # "timesteps_between_check_PPO": 100000,
         # "timesteps_between_check_A2C": 35000,
         # "timesteps_between_check_PPO": 10000, # From ensemble ipynb
@@ -47,7 +47,7 @@ def main():
         "timesteps_between_check_A2C": 50000, 
         "starting_cash": 1000000,
         "verbose": True,
-        "buy_sell_action_space": "continuous", 
+        "buy_sell_action_space": "discrete", 
         'validation_parameter': "sharpe",
         "indicators": ["close_normalized", 'macd_normalized', 'rsi_normalized', 'cci_normalized', "adx_normalized"],
         "fees": 0, # Doesn't work yet
@@ -120,6 +120,7 @@ def main():
 
             # TEMP: Randomize trade data
             # trade_data = [df.sample(frac = 1) for df in trade_data]
+            # train_data = [df.sample(frac = 1) for df in train_data]
 
             print(train_data)
             print(test_data)

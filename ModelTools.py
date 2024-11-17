@@ -178,6 +178,7 @@ def plot_history(history, parameters):
     i = 0
 
     to_plot = pd.DataFrame(index=history.index)
+    # to_plot = pd.DataFrame(index=range(len(history.index)))
     if "closes" in history.columns:
         colours = get_distinct_colors(len(history["closes"].iloc[0]))
         for i in range(len(history["closes"].iloc[0])):

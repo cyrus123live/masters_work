@@ -99,8 +99,11 @@ run_directory = 'runs/2024-11-14-13-44-00'
 run_directory = 'runs/2024-11-14-16-27-53' # Large Crypto portfolio, rediculous returns 
 run_directory = 'runs/2024-11-15-10-45-24' # Zero training sanity check BTC only NOTE: error on 2023-07
 run_directory = 'runs/2024-11-15-11-23-01' # Zero training sanity check large portfolio NOTE: error on 2020-10
-run_directory = 'runs/2024-11-15-11-36-58' # Same as above, different result
-run_directory = 'runs/2024-11-15-13-00-10'
+run_directory = 'runs/2024-11-15-11-36-58' # Same as above, different result, 9% return vs buy and hold's 40%
+
+run_directory = 'runs/2024-11-15-13-00-10' # 5000% percent zero training portfolio vs buy and hold's 1100%
+run_directory = 'runs/2024-11-16-16-33-37' # sanity check: random trade data, continuous, Note: Had 2500x return at one point but ended with -17%
+run_directory = 'runs/2024-11-16-17-14-33' # sanity check: random train data, result is almost identical to buy and hold strategy
 
 if len(sys.argv) > 1:
     run_directory = sys.argv[1]
