@@ -126,20 +126,6 @@ def print_stats_from_history(history, parameters):
     print(f"\nRun Statistics for run [{history.index[0]}, {history.index[-1]}]:\n")
 
     buy_hold_history = get_buy_hold_strategy(history, parameters)
-    # for i, ticker in enumerate(parameters["tickers"]):
-    #     ticker_history = pd.DataFrame(index=history["closes"].index)
-    #     ticker_history["close"] = [float(history["closes"].iloc[j][i]) for j in range(len(history["closes"]))]
-    
-    #     sharpe, volatility = get_sharpe_and_volatility(ticker_history, 'close')
-    #     cumulative, annual = get_cumulative_and_annual_returns(ticker_history, 'close')
-    #     max_drawdown = get_max_drawdown(ticker_history, 'close')
-
-    #     print(f"\n\n{ticker} Buy and Hold Strategy:\n")
-    #     print(f"- Cumulative return: {cumulative * 100:.2f}%")
-    #     print(f"- Annual return: {annual * 100:.2f}%")
-    #     print(f"- Annual volatility: {volatility * 100:.2f}%")
-    #     print(f"- Sharpe ratio: {sharpe:.2f}")
-    #     print(f"- Max drawdown: {max_drawdown * 100:.2f}%")
 
     sharpe, volatility = get_sharpe_and_volatility(buy_hold_history, 'portfolio_value')
     cumulative, annual = get_cumulative_and_annual_returns(buy_hold_history, 'portfolio_value')
@@ -220,7 +206,6 @@ def test_model(model, test_data, parameters, cash, turbulence, trading = False):
 
     return pd.DataFrame(history, index=test_data[0].index)
 
-    # "PPO", seed, train_data, test_data, parameters, contender_name, contenders, logger
 def train(model_type, seed, train_data, test_data, trade_data, parameters, contender_name, contenders, logger, turbulence):
 
     random.seed(seed)
@@ -231,7 +216,7 @@ def train(model_type, seed, train_data, test_data, trade_data, parameters, conte
     torch.backends.cudnn.deterministic = False
     torch.backends.cudnn.benchmark = True
 
-    # Note, kwargs from ensemble ipynb
+
     train_env = Monitor(TradingEnv(train_data, parameters, parameters['starting_cash'], turbulence))
     if model_type == "A2C":
         # model = A2C("MlpPolicy", train_env, verbose=0, seed=seed, n_steps= 5, ent_coef= 0.005, learning_rate= 0.0007) #ent_coef=parameters["ent_coef"])

@@ -50,9 +50,6 @@ class TradingEnv(gym.Env):
             observations.append(self.stock[i] / self.k[i])
         observations.append(self.cash / self.starting_cash)
         obs = np.array(observations)
-        # print(obs)
-        # print(self.cash)
-        # print(self.stock)
         if np.any(np.isnan(obs)) or np.any(np.isinf(obs)):
             print(f"reseting on step: {self.current_step} out of {self.max_steps}")
             print("Obs:", obs)
@@ -60,16 +57,10 @@ class TradingEnv(gym.Env):
             quit()
             return self.reset()
         return obs
-        # return observations
 
     def _take_action(self, action):
 
         self.last_action = action
-
-        # if self.trading:
-        #     print("stock:", self.stock)
-        #     print("cash:", self.cash)
-            # print("action:", action)
 
         if self.trading:
             turbulence = self.turbulence[self.turbulence["datadate"] == self.data[0].index[self.current_step]]["turbulence"].iloc[0]
@@ -95,7 +86,7 @@ class TradingEnv(gym.Env):
 
             for i, df in enumerate(self.data):
 
-                # Naive solution from ensemble: go through list and update based on buy and sell decisions, not taking into account that money may be ran out by the time we get to last stocks in list
+                # Naive continuous solution from ensemble: go through list and update based on buy and sell decisions, not taking into account that money may be ran out by the time we get to last stocks in list
                 if action[i] < 0 and self.stock[i] > 0:
                     to_sell = min(self.stock[i], abs(action[i]) * self.k[i])
                     self.cash += to_sell * df["close"].iloc[self.current_step] * (1 - self.c_selling)
@@ -109,10 +100,6 @@ class TradingEnv(gym.Env):
                     self.cash -= to_buy * df["close"].iloc[self.current_step] * (1 + self.c_buying)
                     self.stock[i] += to_buy
                     # print(f"bought {to_buy} of stock {i}, now have {self.cash} cash and {self.stock[i]} stock")
-
-        # print("resulting stock:", self.stock)
-        # print("resulting cash:", self.cash)
-        # time.sleep(5)
 
         # Fix rounding errors
         if self.cash < 0:

@@ -41,10 +41,12 @@ def main():
         'validation_parameter': "sharpe",
         # "indicators": ["close_normalized", 'macd_normalized', 'rsi_normalized', 'cci_normalized', "adx_normalized"],
         "indicators": ["close_normalized"],
-        "fees": 0, # Doesn't work yet
+        "fees": 0, # Doesn't work for crypto yet
         "use_turbulence": False,
-        "t": "half-hourly",
-        "tickers": ["BTCUSDT", "ETHUSDT", "XRPUSDT", "BNBUSDT", "TRXUSDT"],
+        "turbulence_threshold": 200, # Doesn't work for crypto yet
+        "t": "minutely",
+        # "tickers": ["BTCUSDT", "ETHUSDT", "XRPUSDT", "BNBUSDT", "TRXUSDT"],
+        "tickers": ["BTCUSDT", "BTCUSDT_INVERSE"],
         "cores": 4
     }
 
@@ -59,7 +61,7 @@ def main():
 
         # Instantiate run folder and parameters file
         run_start_time = dt.datetime.now()
-        run_folder_name = "runs/" + runs_start_time.strftime('%Y-%m-%d-%H-%M-%S') + "/" + run
+        run_folder_name = "runs/" + runs_start_time.strftime('%Y-%m-%d-%H-%M-%S') + "/" + str(run)
         ModelTools.make_dir(run_folder_name)
         logger = ModelTools.Logger(run_folder_name)
         with open(f"{run_folder_name}/parameters.json", 'w') as f:
@@ -113,11 +115,8 @@ def main():
             except:
                 trade_data = test_data
 
-            # TEMP: Randomize trade data
-            # trade_data = [df.sample(frac = 1) for df in trade_data]
-            # train_data = [df.sample(frac = 1) for df in train_data]
-
             print(train_data)
+            quit()
             # print(test_data)
             # print(trade_data)
 

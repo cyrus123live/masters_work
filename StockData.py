@@ -54,6 +54,9 @@ def calculate_turbulence(data, parameters):
     })
     return turbulence_index
 
+# def calculate_inverse(df):
+
+
 def process_data(data):
 
     # print(data)
@@ -130,97 +133,61 @@ def get_month_hourly(year, month):
         ).dropna()
     )
 
-def get_month_half_hourly(year, month, tickers):
+def get_month(starting_month, i, parameters):
     output = []
-    for ticker in tickers:
-        frames = []
-        if month == 1:
-            frames.append(get_month_csv(year - 1, 12, ticker).resample('30min').agg(
+    year = (starting_month + pd.DateOffset(months=i)).year % 100
+    month = (starting_month + pd.DateOffset(months=i)).month
+    if parameters["t"] == "daily":
+        for ticker in parameters["tickers"]:
+            frames = []
+            frames.append(get_daily_csv(year, month, ticker).dropna().iloc[::-1])
+            i_year = year
+            i_month = month
+            for i in range(5):
+                i_month -= 1
+                if i_month < 1:
+                    i_month = 12
+                    i_year -= 1
+                frames.append(get_daily_csv(i_year, i_month, ticker).dropna().iloc[::-1])
+            t_data = process_data(pd.concat(frames).iloc[::-1])
+            output.append(t_data[t_data.index.month == month])
+    elif parameters["t"] == "half-hourly":
+        for ticker in parameters["tickers"]:
+            frames = []
+            if "INVERSE" in ticker:
+                ticker = ticker[:-8]
+                print(ticker)
+            if month == 1:
+                frames.append(get_month_csv(year - 1, 12, ticker).resample('30min').agg(
+                    open=('open', 'first'),
+                    high=('high', 'max'),
+                    low=('low', 'min'),
+                    close=('close', 'last'),
+                    volume=('volume', 'sum')
+                ).dropna())
+            else:
+                frames.append(get_month_csv(year, month - 1, ticker).resample('30min').agg(
+                    open=('open', 'first'),
+                    high=('high', 'max'),
+                    low=('low', 'min'),
+                    close=('close', 'last'),
+                    volume=('volume', 'sum')
+                ).dropna())
+            frames.append(get_month_csv(year, month, ticker).resample('30min').agg(
                 open=('open', 'first'),
                 high=('high', 'max'),
                 low=('low', 'min'),
                 close=('close', 'last'),
                 volume=('volume', 'sum')
             ).dropna())
-        else:
-            frames.append(get_month_csv(year, month - 1, ticker).resample('30min').agg(
-                open=('open', 'first'),
-                high=('high', 'max'),
-                low=('low', 'min'),
-                close=('close', 'last'),
-                volume=('volume', 'sum')
-            ).dropna())
-        frames.append(get_month_csv(year, month, ticker).resample('30min').agg(
-            open=('open', 'first'),
-            high=('high', 'max'),
-            low=('low', 'min'),
-            close=('close', 'last'),
-            volume=('volume', 'sum')
-        ).dropna())
 
-        processed = process_data(pd.concat(frames))
-        output.append(processed[processed.index.month == month])
-    return output
-
-def get_month(year, month, tickers = ["spy"]):
-    output = []
-    for ticker in tickers:
-        output.append(process_data(get_month_csv(year, month, ticker).dropna().iloc[::-1]).dropna())
-
-    # print(output)
+            processed = process_data(pd.concat(frames))
+            output.append(processed[processed.index.month == month])
+    else: 
+        for ticker in parameters["tickers"]:
+            output.append(process_data(get_month_csv(year, month, ticker).dropna().iloc[::-1]).dropna())
 
     return output
-
-
-def get_month_daily(year, month, tickers):
-    output = []
-    for ticker in tickers:
-        frames = []
-        frames.append(get_daily_csv(year, month, ticker).dropna().iloc[::-1])
-        i_year = year
-        i_month = month
-        for i in range(5):
-            i_month -= 1
-            if i_month < 1:
-                i_month = 12
-                i_year -= 1
-            frames.append(get_daily_csv(i_year, i_month, ticker).dropna().iloc[::-1])
-        t_data = process_data(pd.concat(frames).iloc[::-1])
-        output.append(t_data[t_data.index.month == month])
-
-    return output
-
-    '''
-    frames.append(
-        get_month_csv(year, month).resample('D').agg(
-        open=('open', 'first'),
-        high=('high', 'max'),
-        low=('low', 'min'),
-        close=('close', 'last'),
-        volume=('volume', 'sum')
-        ).dropna().iloc[::-1]
-    )
-    i_year = year
-    i_month = month
-    for i in range(5):
-        i_month -= 1
-        if i_month < 1:
-            i_month = 12
-            i_year -= 1
-        frames.append(
-            get_month_csv(i_year, i_month).resample('D').agg(
-            open=('open', 'first'),
-            high=('high', 'max'),
-            low=('low', 'min'),
-            close=('close', 'last'),
-            volume=('volume', 'sum')
-            ).dropna().iloc[::-1]
-        )
-    
-    output = process_data(pd.concat(frames).iloc[::-1], True)
-    return output[output.index.month == month]
-
-    '''
 
 def get_random_month_not_2008():
     year = random.randint(0, 23)
@@ -253,12 +220,7 @@ def get_random_train_data(num_months):
 def get_consecutive_months(starting_month, num_months, parameters):
     frames = [[] for i in range(len(parameters["tickers"]))]
     for i in range(num_months):
-        if parameters["t"] == "daily":
-            data = get_month_daily((starting_month + pd.DateOffset(months=i)).year % 100, (starting_month + pd.DateOffset(months=i)).month, parameters["tickers"])
-        elif parameters["t"] == "half-hourly":
-            data = get_month_half_hourly((starting_month + pd.DateOffset(months=i)).year % 100, (starting_month + pd.DateOffset(months=i)).month, parameters["tickers"])
-        else: 
-            data = get_month((starting_month + pd.DateOffset(months=i)).year % 100, (starting_month + pd.DateOffset(months=i)).month, parameters["tickers"])
+        data = get_month(starting_month, i, parameters)
         for i, d in enumerate(data):
             frames[i].append(d)   
 
