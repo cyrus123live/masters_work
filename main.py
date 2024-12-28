@@ -24,7 +24,7 @@ def main():
     '''
 
     parameters = {
-        "starting_month": "2020-3",
+        "starting_month": "2020-4", # Half-hourly data doesn't work for 2020-01 and below (this parameter is for trading month)
         "ending_month": "2024-9",
         "train_months": 1,
         "test_months": 1,
@@ -38,13 +38,14 @@ def main():
         "starting_cash": 1000000,
         "verbose": True,
         "buy_sell_action_space": "discrete", 
+        "shorting": True,
         'validation_parameter': "sharpe",
         # "indicators": ["close_normalized", 'macd_normalized', 'rsi_normalized', 'cci_normalized', "adx_normalized"],
         "indicators": ["close_normalized"],
         "fees": 0, # Doesn't work for crypto yet
         "use_turbulence": False,
         "turbulence_threshold": 200, # Doesn't work for crypto yet
-        "t": "minutely",
+        "t": "half-hourly",
         # "tickers": ["BTCUSDT", "ETHUSDT", "XRPUSDT", "BNBUSDT", "TRXUSDT"],
         "tickers": ["BTCUSDT", "BTCUSDT_INVERSE"],
         "cores": 4

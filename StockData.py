@@ -54,7 +54,9 @@ def calculate_turbulence(data, parameters):
     })
     return turbulence_index
 
-# def calculate_inverse(df):
+def invert_ticker(df):
+    print(df)
+    return df
 
 
 def process_data(data):
@@ -137,8 +139,8 @@ def get_month(starting_month, i, parameters):
     output = []
     year = (starting_month + pd.DateOffset(months=i)).year % 100
     month = (starting_month + pd.DateOffset(months=i)).month
-    if parameters["t"] == "daily":
-        for ticker in parameters["tickers"]:
+    for ticker in parameters["tickers"]:
+        if parameters["t"] == "daily":
             frames = []
             frames.append(get_daily_csv(year, month, ticker).dropna().iloc[::-1])
             i_year = year
@@ -151,12 +153,8 @@ def get_month(starting_month, i, parameters):
                 frames.append(get_daily_csv(i_year, i_month, ticker).dropna().iloc[::-1])
             t_data = process_data(pd.concat(frames).iloc[::-1])
             output.append(t_data[t_data.index.month == month])
-    elif parameters["t"] == "half-hourly":
-        for ticker in parameters["tickers"]:
+        elif parameters["t"] == "half-hourly":
             frames = []
-            if "INVERSE" in ticker:
-                ticker = ticker[:-8]
-                print(ticker)
             if month == 1:
                 frames.append(get_month_csv(year - 1, 12, ticker).resample('30min').agg(
                     open=('open', 'first'),
@@ -183,10 +181,8 @@ def get_month(starting_month, i, parameters):
 
             processed = process_data(pd.concat(frames))
             output.append(processed[processed.index.month == month])
-    else: 
-        for ticker in parameters["tickers"]:
+        else: 
             output.append(process_data(get_month_csv(year, month, ticker).dropna().iloc[::-1]).dropna())
-
     return output
 
 def get_random_month_not_2008():
