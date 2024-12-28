@@ -248,7 +248,6 @@ def train_model(model_type, model, train_data, test_data, trade_data, training_r
     best_score = -100
     score = 0
 
-    model.save(contender_name)
     logger.print_out("Started training a model")
     
     for i in range(training_rounds_per_contender):

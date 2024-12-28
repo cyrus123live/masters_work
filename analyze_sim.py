@@ -102,8 +102,34 @@ run_directory = 'runs/2024-11-15-11-23-01' # Zero training sanity check large po
 run_directory = 'runs/2024-11-15-11-36-58' # Same as above, different result, 9% return vs buy and hold's 40%
 
 run_directory = 'runs/2024-11-15-13-00-10' # 5000% percent zero training portfolio vs buy and hold's 1100%
-run_directory = 'runs/2024-11-16-16-33-37' # sanity check: random trade data, continuous, Note: Had 2500x return at one point but ended with -17%
-run_directory = 'runs/2024-11-16-17-14-33' # sanity check: random train data, result is almost identical to buy and hold strategy
+# run_directory = 'runs/2024-11-16-16-33-37' # sanity check: random trade data, continuous, Note: Had 2500x return at one point but ended with -17%
+# run_directory = 'runs/2024-11-16-17-14-33' # sanity check: random train data, result is almost identical to buy and hold strategy
+
+# Zero training sanity check discrete
+# run_directory = 'runs/2024-11-16-01-14-06'
+# run_directory = 'runs/2024-11-16-02-40-50'
+# run_directory = 'runs/2024-11-16-04-07-23'
+
+# Zero training sanity check continuous
+# run_directory = 'runs/2024-11-16-23-07-16'
+# run_directory = 'runs/2024-11-17-00-35-44'
+# run_directory = 'runs/2024-11-17-02-04-02'
+
+run_directory = 'runs/2024-11-17-16-48-57' # 10x return in one month
+run_directory = 'runs/2024-11-17-17-53-56' # half-hourly test, significantly underperforms B&H with 1500 step rounds
+run_directory = 'runs/2024-11-17-18-10-14' # Half-hourly shot up at end
+run_directory = 'runs/2024-11-17-19-31-50' # Half-hourly consistent high performance
+run_directory = 'runs/2024-11-17-21-03-10' # Half-hourly consistent poor performance
+
+# 16 models instead of above's 4
+run_directory = 'runs/2024-11-17-22-25-27'
+run_directory = 'runs/2024-11-18-03-10-38'
+run_directory = 'runs/2024-11-18-07-56-10'
+
+run_directory = 'runs/2024-11-18-21-11-46' # 32 Models
+
+run_directory = '/Volumes/T7 Touch/masters_work backup/2024-11-20-08-41-48'
+
 
 if len(sys.argv) > 1:
     run_directory = sys.argv[1]

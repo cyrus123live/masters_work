@@ -130,6 +130,38 @@ def get_month_hourly(year, month):
         ).dropna()
     )
 
+def get_month_half_hourly(year, month, tickers):
+    output = []
+    for ticker in tickers:
+        frames = []
+        if month == 1:
+            frames.append(get_month_csv(year - 1, 12, ticker).resample('30min').agg(
+                open=('open', 'first'),
+                high=('high', 'max'),
+                low=('low', 'min'),
+                close=('close', 'last'),
+                volume=('volume', 'sum')
+            ).dropna())
+        else:
+            frames.append(get_month_csv(year, month - 1, ticker).resample('30min').agg(
+                open=('open', 'first'),
+                high=('high', 'max'),
+                low=('low', 'min'),
+                close=('close', 'last'),
+                volume=('volume', 'sum')
+            ).dropna())
+        frames.append(get_month_csv(year, month, ticker).resample('30min').agg(
+            open=('open', 'first'),
+            high=('high', 'max'),
+            low=('low', 'min'),
+            close=('close', 'last'),
+            volume=('volume', 'sum')
+        ).dropna())
+
+        processed = process_data(pd.concat(frames))
+        output.append(processed[processed.index.month == month])
+    return output
+
 def get_month(year, month, tickers = ["spy"]):
     output = []
     for ticker in tickers:
@@ -223,6 +255,8 @@ def get_consecutive_months(starting_month, num_months, parameters):
     for i in range(num_months):
         if parameters["t"] == "daily":
             data = get_month_daily((starting_month + pd.DateOffset(months=i)).year % 100, (starting_month + pd.DateOffset(months=i)).month, parameters["tickers"])
+        elif parameters["t"] == "half-hourly":
+            data = get_month_half_hourly((starting_month + pd.DateOffset(months=i)).year % 100, (starting_month + pd.DateOffset(months=i)).month, parameters["tickers"])
         else: 
             data = get_month((starting_month + pd.DateOffset(months=i)).year % 100, (starting_month + pd.DateOffset(months=i)).month, parameters["tickers"])
         for i, d in enumerate(data):

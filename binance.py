@@ -12,6 +12,7 @@ symbols = [
     "SOLUSDT",
     "TRXUSDT"
 ]
+symbols = ["BTCUSDT"]
 i = 0
 # for symbol in symbols:
 #     os.makedirs(f"stock_data/{symbol}_data", exist_ok=True)

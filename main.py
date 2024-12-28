@@ -23,48 +23,43 @@ def main():
     - Trade 3-0 months ago with best from training
     '''
 
-    multiprocessing.set_start_method('spawn')
-    manager = multiprocessing.Manager()
-    multiprocessing_cores = 4
-    # if len(sys.argv) > 1:
-    #     multiprocessing_cores = int(sys.argv[1])
-
     parameters = {
         "starting_month": "2020-3",
         "ending_month": "2024-9",
         "train_months": 1,
         "test_months": 1,
         "trade_months": 1,
-        "num_ppo": 8,
-        "num_a2c": 8,
+        "num_ppo": 0,
+        "num_a2c": 32,
         "test_before_train": False,
         "training_rounds_per_contender": 1,
-        # "timesteps_between_check_PPO": 100000,
-        # "timesteps_between_check_A2C": 35000,
-        # "timesteps_between_check_PPO": 10000, # From ensemble ipynb
-        # "timesteps_between_check_A2C": 10000, # From ensemble ipynb
-        "timesteps_between_check_PPO": 50000, 
+        "timesteps_between_check_PPO": 1500, 
         "timesteps_between_check_A2C": 50000, 
         "starting_cash": 1000000,
         "verbose": True,
         "buy_sell_action_space": "discrete", 
         'validation_parameter': "sharpe",
-        "indicators": ["close_normalized", 'macd_normalized', 'rsi_normalized', 'cci_normalized', "adx_normalized"],
+        # "indicators": ["close_normalized", 'macd_normalized', 'rsi_normalized', 'cci_normalized', "adx_normalized"],
+        "indicators": ["close_normalized"],
         "fees": 0, # Doesn't work yet
-        "turbulence_threshold": 140, # From original ensemble code
         "use_turbulence": False,
-        "t": "minutely",
-        "tickers": ["BTCUSDT", "ETHUSDT", "XRPUSDT", "BNBUSDT", "TRXUSDT"]
-        # "tickers": ["BTCUSDT"]
+        "t": "half-hourly",
+        "tickers": ["BTCUSDT", "ETHUSDT", "XRPUSDT", "BNBUSDT", "TRXUSDT"],
+        "cores": 4
     }
 
-    for _ in range(int(sys.argv[1])):
+    multiprocessing.set_start_method('spawn')
+    manager = multiprocessing.Manager()
+    multiprocessing_cores = 4
+
+    runs_start_time = dt.datetime.now()
+    for run in range(int(sys.argv[1])):
 
         cash = parameters["starting_cash"]
 
         # Instantiate run folder and parameters file
         run_start_time = dt.datetime.now()
-        run_folder_name = "runs/" + run_start_time.strftime('%Y-%m-%d-%H-%M-%S')
+        run_folder_name = "runs/" + runs_start_time.strftime('%Y-%m-%d-%H-%M-%S') + "/" + run
         ModelTools.make_dir(run_folder_name)
         logger = ModelTools.Logger(run_folder_name)
         with open(f"{run_folder_name}/parameters.json", 'w') as f:
@@ -123,8 +118,8 @@ def main():
             # train_data = [df.sample(frac = 1) for df in train_data]
 
             print(train_data)
-            print(test_data)
-            print(trade_data)
+            # print(test_data)
+            # print(trade_data)
 
             if not parameters["use_turbulence"]:
                 turbulence = pd.DataFrame(index = trade_data[0].index)
