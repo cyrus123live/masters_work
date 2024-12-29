@@ -12,16 +12,10 @@ import os
 from ModelTools import make_dir
 import sys
 import random
+from sb3_contrib import RecurrentPPO
 import json
 
 def main():
-
-    '''
-    Loops 3 months long:
-    - Train from 9-6 months ago -> 20 PPOs, ordered by validation (6-3 months ago) score
-        - Train each one just until overfitting by testing each one between rounds of training
-    - Trade 3-0 months ago with best from training
-    '''
 
     parameters = {
         "starting_month": "2020-4", # Half-hourly data doesn't work for 2020-01 and below (this parameter is for trading month)
@@ -33,8 +27,9 @@ def main():
         "num_a2c": 32,
         "test_before_train": False,
         "training_rounds_per_contender": 1,
-        "timesteps_between_check_PPO": 1500, 
-        "timesteps_between_check_A2C": 50000, 
+        "timesteps_per_round_PPO": 1500, 
+        # "timesteps_per_round_A2C": 50000, 
+        "timesteps_per_round_A2C": 25000, 
         "starting_cash": 1000000,
         "verbose": True,
         "buy_sell_action_space": "discrete", 
@@ -46,8 +41,8 @@ def main():
         "use_turbulence": False,
         "turbulence_threshold": 200, # Doesn't work for crypto yet
         "t": "half-hourly",
-        # "tickers": ["BTCUSDT", "ETHUSDT", "XRPUSDT", "BNBUSDT", "TRXUSDT"],
-        "tickers": ["BTCUSDT", "BTCUSDT_INVERSE"],
+        "tickers": ["BTCUSDT", "ETHUSDT", "XRPUSDT", "BNBUSDT", "TRXUSDT"],
+        # "tickers": ["BTCUSDT"],
         "cores": 4
     }
 
@@ -117,7 +112,6 @@ def main():
                 trade_data = test_data
 
             print(train_data)
-            quit()
             # print(test_data)
             # print(trade_data)
 

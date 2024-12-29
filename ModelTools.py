@@ -35,11 +35,11 @@ class Logger():
             f.write(str(s) + "\n")
         
 
-def print_parameters(run_folder_name):
+def print_parameters(run_folder_name, i):
     print("\nrun " + run_folder_name)
     try:
         print("\nParameters:\n")
-        with open(f"{run_folder_name}/parameters.json", 'r') as f:
+        with open(f"{run_folder_name}/{i}/parameters.json", 'r') as f:
             # print(json.dumps(json.loads(f.read()), indent=1))
             data = json.loads(f.read())
         for d in data:
@@ -49,20 +49,20 @@ def print_parameters(run_folder_name):
         print("Parameters File not found")
 
 
-def combine_trade_window_histories(run_folder_name):
+def combine_trade_window_histories(run_folder_name, i = ""):
 
     combined_history = pd.DataFrame()
 
-    folders = [d for d in os.listdir(f"{run_folder_name}") if "20" in d]
+    folders = [d for d in os.listdir(f"{run_folder_name}/{i}") if "20" in d]
     folders.sort(key=lambda x: (int(x.split("-")[0]), int(x.split("-")[1])))
 
     for f in folders:
         try:
-            combined_history = pd.concat([combined_history, read_history_from_file(f"{run_folder_name}/{f}/trade_window_history")])
+            combined_history = pd.concat([combined_history, read_history_from_file(f"{run_folder_name}/{i}/{f}/trade_window_history")])
         except:
             continue
 
-    write_history_to_file(combined_history, f"{run_folder_name}/run_history")
+    write_history_to_file(combined_history, f"{run_folder_name}/{i}/run_history")
     return combined_history
 
 def make_dir(name):
@@ -167,7 +167,11 @@ def plot_history(history, parameters):
     # to_plot = pd.DataFrame(index=range(len(history.index)))
     if "closes" in history.columns:
         colours = get_distinct_colors(len(history["closes"].iloc[0]))
-        for i in range(len(history["closes"].iloc[0])):
+        if parameters["shorting"]:
+            num_stocks = int(len(history["closes"].iloc[0]) / 2)
+        else:
+            num_stocks = len(history["closes"].iloc[0])
+        for i in range(num_stocks):
             close_data = pd.DataFrame(index=history["closes"].index)
             close_data["close"] = [float(history["closes"].iloc[j][i]) for j in range(len(history["closes"]))]
             to_plot[f'close_{i}'] = [float(c) for c in close_data["close"] / float(history["closes"].iloc[0][i])]
@@ -238,9 +242,9 @@ def train_model(model_type, model, train_data, test_data, trade_data, training_r
     for i in range(training_rounds_per_contender):
 
         if model_type == "A2C":
-            model.learn(total_timesteps=parameters["timesteps_between_check_A2C"], progress_bar=False, reset_num_timesteps=False)
+            model.learn(total_timesteps=parameters["timesteps_per_round_A2C"], progress_bar=False, reset_num_timesteps=False)
         else:
-            model.learn(total_timesteps=parameters["timesteps_between_check_PPO"], progress_bar=False, reset_num_timesteps=False)
+            model.learn(total_timesteps=parameters["timesteps_per_round_PPO"], progress_bar=False, reset_num_timesteps=False)
         test_history = test_model(model, test_data, parameters, parameters['starting_cash'], turbulence)
         sharpe, _ = get_sharpe_and_volatility(test_history, 'portfolio_value')
         if parameters['validation_parameter'] == 'sharpe':

@@ -2,6 +2,7 @@ import ModelTools
 import sys
 import json
 import yfinance as yf
+import os
 
 # run_directory = 'runs/2024-10-11-22-08-51'
 # run_directory = 'runs/2024-10-12-00-10-18' # Ensemble window run, 12 contenders with 5 training rounds each
@@ -129,18 +130,35 @@ run_directory = 'runs/2024-11-18-07-56-10'
 run_directory = 'runs/2024-11-18-21-11-46' # 32 Models
 
 run_directory = '/Volumes/T7 Touch/masters_work backup/2024-11-20-08-41-48'
+run_directory = 'runs/2024-12-28-15-02-26'
 
 
 if len(sys.argv) > 1:
     run_directory = sys.argv[1]
 
-history = ModelTools.combine_trade_window_histories(run_directory)
-with open(f"{run_directory}/parameters.json", 'r') as f:
-    parameters = json.loads(f.readline())
+if "0" in os.listdir(run_directory):
 
-# Parse history closes from string
-history["closes"] = [[float(i) for i in history["closes"].iloc[i].replace("[", "").replace("]", "").strip().split(",")] for i in range(len(history["closes"]))]
+    for i in range(len(os.listdir(run_directory))):
 
-ModelTools.print_parameters(run_directory)
-ModelTools.print_stats_from_history(history, parameters)
-ModelTools.plot_history(history, parameters)
+        history = ModelTools.combine_trade_window_histories(run_directory, i)
+        with open(f"{run_directory}/{i}/parameters.json", 'r') as f:
+            parameters = json.loads(f.readline())
+
+        # Parse history closes from string
+        history["closes"] = [[float(i) for i in history["closes"].iloc[i].replace("[", "").replace("]", "").strip().split(",")] for i in range(len(history["closes"]))]
+
+        ModelTools.print_parameters(run_directory, i)
+        ModelTools.print_stats_from_history(history, parameters)
+        ModelTools.plot_history(history, parameters)
+
+else:
+    history = ModelTools.combine_trade_window_histories(run_directory)
+    with open(f"{run_directory}/parameters.json", 'r') as f:
+        parameters = json.loads(f.readline())
+
+    # Parse history closes from string
+    history["closes"] = [[float(i) for i in history["closes"].iloc[i].replace("[", "").replace("]", "").strip().split(",")] for i in range(len(history["closes"]))]
+
+    ModelTools.print_parameters(run_directory)
+    ModelTools.print_stats_from_history(history, parameters)
+    ModelTools.plot_history(history, parameters)

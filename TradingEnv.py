@@ -23,9 +23,14 @@ class TradingEnv(gym.Env):
             self.action_space = spaces.Box(low=-1, high=1, shape=(len(data),), dtype=np.float64)
         else:
             self.action_space = spaces.Discrete(n=len(data) + 1)
-        self.observation_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(len(data) * (len(self.parameters['indicators']) + 1) + 1,), dtype=np.float64
-        ) 
+        if parameters["shorting"]:
+            self.observation_space = spaces.Box(
+                low=-np.inf, high=np.inf, shape=(int(len(data) / 2) * (len(self.parameters['indicators']) + 1) + 1,), dtype=np.float64
+            ) 
+        else:
+            self.observation_space = spaces.Box(
+                low=-np.inf, high=np.inf, shape=(len(data) * (len(self.parameters['indicators']) + 1) + 1,), dtype=np.float64
+            ) 
         
         # Set starting point
         self.current_step = 0
@@ -33,7 +38,10 @@ class TradingEnv(gym.Env):
         
         # Initialize portfolio
         self.cash = self.starting_cash
-        self.stock = [0 for i in data]
+        if self.parameters["shorting"]:
+            self.stock = [0 for i in range(int(len(data) / 2))]
+        else:
+            self.stock = [0 for i in range(len(data))]
         self.total_value = self.cash
         self.last_action = []
         self.turbulence = turbulence
@@ -45,9 +53,15 @@ class TradingEnv(gym.Env):
     def _get_obs(self):
 
         observations = []
-        for i, df in enumerate(self.data):
-            observations.extend(df[self.parameters['indicators']].iloc[self.current_step].to_list())
-            observations.append(self.stock[i] / self.k[i])
+        # Observations: [[indicators for each stock, amount held normalized by k for each stock], cash]
+        if self.parameters["shorting"]:
+            for i, df in enumerate(self.data[:int(len(self.data) / 2)]):
+                observations.extend(df[self.parameters['indicators']].iloc[self.current_step].to_list())
+                observations.append(self.stock[i] / self.k[i])
+        else:
+            for i, df in enumerate(self.data):
+                observations.extend(df[self.parameters['indicators']].iloc[self.current_step].to_list())
+                observations.append(self.stock[i] / self.k[i])
         observations.append(self.cash / self.starting_cash)
         obs = np.array(observations)
         if np.any(np.isnan(obs)) or np.any(np.isinf(obs)):

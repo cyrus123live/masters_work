@@ -12,6 +12,7 @@ import datetime as dt
 from dotenv import load_dotenv
 import os
 from stockstats import StockDataFrame as Sdf
+import copy
 
 def calculate_turbulence(data, parameters):
     df_price_pivot = pd.DataFrame(index = data[0].index)
@@ -55,8 +56,11 @@ def calculate_turbulence(data, parameters):
     return turbulence_index
 
 def invert_ticker(df):
-    print(df)
-    return df
+    inverse = copy.deepcopy(df)
+    inverse["close"] = df["close"].pct_change() * -1 + 1
+    inverse["close"] = inverse["close"].cumprod() * df["close"].iloc[0]
+    inverse.iloc[0] = df.iloc[0]
+    return inverse
 
 
 def process_data(data):
@@ -183,6 +187,12 @@ def get_month(starting_month, i, parameters):
             output.append(processed[processed.index.month == month])
         else: 
             output.append(process_data(get_month_csv(year, month, ticker).dropna().iloc[::-1]).dropna())
+
+    if parameters["shorting"]:
+        inverses = []
+        [inverses.append(invert_ticker(df)) for df in output]
+        output.extend(inverses)
+
     return output
 
 def get_random_month_not_2008():
@@ -215,6 +225,8 @@ def get_random_train_data(num_months):
 
 def get_consecutive_months(starting_month, num_months, parameters):
     frames = [[] for i in range(len(parameters["tickers"]))]
+    if parameters["shorting"]:
+        frames = [[] for i in range(len(parameters["tickers"]) * 2)]
     for i in range(num_months):
         data = get_month(starting_month, i, parameters)
         for i, d in enumerate(data):
