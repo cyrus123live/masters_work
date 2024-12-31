@@ -12,6 +12,7 @@ import datetime as dt
 from dotenv import load_dotenv
 import os
 from stockstats import StockDataFrame as Sdf
+import stockstats
 import copy
 
 def calculate_turbulence(data, parameters):
@@ -63,6 +64,44 @@ def invert_ticker(df):
     return inverse
 
 
+def calculate_td_combo(df):
+    indicator = pd.DataFrame(index=df.index)
+
+    setup_cat = [0 for _ in range(len(df))]
+    countdown_completed_cat = [0 for _ in range(len(df))]
+    setup_count = [0 for _ in range(len(df))]
+    countdown_count = [0 for _ in range(len(df))]
+
+    for i, close in enumerate(df["close"]):
+        if i < 4: continue
+        if close < df["close"].iloc[i - 4]:
+            setup_count[i] = setup_count[i - 1] + 1
+        else:
+            setup_cat[i] = 0
+            setup_count[i] = 0
+            countdown_count[i] = 0
+            countdown_completed_cat[i] = 0
+
+        if setup_count[i] > 0:
+
+            if close <= df["low"].iloc[i - 2]: 
+                countdown_count[i] = countdown_count[i - 1] + 1
+            else:
+                countdown_count[i] = countdown_count[i - 1]
+
+            if countdown_count[i] >= 13: countdown_completed_cat[i] = 1
+
+        if setup_count[i] >= 9:
+            setup_cat[i] = 1
+
+    indicator["setup_cat"] = setup_cat
+    indicator["countdown_completed_cat"] = countdown_completed_cat
+    indicator["setup_count"] = setup_count
+    indicator["countdown_count"] = countdown_count
+
+    return indicator
+
+
 def process_data(data):
 
     # print(data)
@@ -71,11 +110,36 @@ def process_data(data):
     stock = Sdf.retype(data.copy())
 
     processed_data = pd.DataFrame(index=data.index)
-    processed_data['macd'] = stock['macd']
-    processed_data['rsi'] = stock['rsi_30']
-    processed_data['cci'] = stock['cci_30']
-    processed_data['adx'] = stock['dx_30']
-    processed_data['close'] = data["close"]
+    processed_data['close'] = data['close']
+    processed_data['low'] = data['low']
+    processed_data['high'] = data['high']
+    processed_data['volume'] = data['volume']
+
+    td_combo = calculate_td_combo(processed_data)
+
+    processed_data["setup_cat"] = td_combo["setup_cat"]
+    processed_data["countdown_completed_cat"] = td_combo["countdown_completed_cat"]
+    processed_data["setup_count"] = td_combo["setup_count"]
+    processed_data["countdown_count"] = td_combo["countdown_count"]
+
+    # processed_data['macd'] = stock['macd']
+    # processed_data['rsi'] = stock['rsi_30']
+    # processed_data['cci'] = stock['cci_30']
+    # processed_data['adx'] = stock['dx_30']
+
+    processed_data['log-return'] = stock['log-ret']
+    processed_data['rsi'] = stock['rsi']
+    processed_data['stoch_rsi'] = stock['stochrsi']
+    processed_data['atr'] = stock['atr']
+    processed_data['mfi'] = stock['mfi']
+    processed_data['supertrend_ub'] = stock['supertrend_ub']
+    processed_data['supertrend_lb'] = stock['supertrend_lb']
+    processed_data['chop'] = stock['chop']
+
+    stockstats.set_dft_window('macd', (6, 13, 5))
+    processed_data["macd"] = stock['macd']
+    processed_data["macds"] = stock['macds']
+    processed_data["macdh"] = stock['macdh']
 
     # processed_data["Close"] = data["close"]
     # processed_data["Change"] = data["close"].diff()
@@ -86,13 +150,13 @@ def process_data(data):
     # processed_data["Close_STD"] = processed_data["Close"].rolling(window=20).std()
     # -------------------------------------
 
-    for feature in processed_data.columns:
-        # Calculate rolling mean and std
-        rolling_mean = processed_data[feature].rolling(window=20).mean()
-        rolling_std = processed_data[feature].rolling(window=20).std()
+    # for feature in processed_data.columns:
+    #     # Calculate rolling mean and std
+    #     rolling_mean = processed_data[feature].rolling(window=20).mean()
+    #     rolling_std = processed_data[feature].rolling(window=20).std()
 
-        # Normalize the feature
-        processed_data[f'{feature}_normalized'] = (processed_data[feature] - rolling_mean) / rolling_std
+    #     # Normalize the feature
+    #     processed_data[f'{feature}_normalized'] = (processed_data[feature] - rolling_mean) / rolling_std
 
         # Min-Max Scaling to range -1 to 1 using rolling window 
         # rolling_min = processed_data[f'{feature}_Normalized'].rolling(window=20).min()
@@ -105,7 +169,6 @@ def process_data(data):
 
     # return processed_data.iloc[40 - processed_data.index[0].minute:]
     return processed_data
-    return data
 
 def get_min_max_values():
     historical_data = get_consecutive_months(dt.datetime(year=2000, month=1, day=1), 120) # get 2000-2010 data 

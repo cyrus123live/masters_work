@@ -23,6 +23,7 @@ import pickle
 import time
 import copy
 from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
+from sb3_contrib import RecurrentPPO
 
 
 class Logger():
@@ -212,6 +213,7 @@ def test_model(model, test_data, parameters, cash, turbulence, trading = False):
 
 def train(model_type, seed, train_data, test_data, trade_data, parameters, contender_name, contenders, logger, turbulence):
 
+    # Ensure randomness despite multiprocessing
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -220,14 +222,15 @@ def train(model_type, seed, train_data, test_data, trade_data, parameters, conte
     torch.backends.cudnn.deterministic = False
     torch.backends.cudnn.benchmark = True
 
-
     train_env = Monitor(TradingEnv(train_data, parameters, parameters['starting_cash'], turbulence))
     if model_type == "A2C":
         # model = A2C("MlpPolicy", train_env, verbose=0, seed=seed, n_steps= 5, ent_coef= 0.005, learning_rate= 0.0007) #ent_coef=parameters["ent_coef"])
-        model = A2C("MlpPolicy", train_env, verbose=0, seed=seed) #ent_coef=parameters["ent_coef"])
+        model = A2C("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=parameters["ent_coef"])
+    elif model_type == "Recurrent_PPO":
+        model = RecurrentPPO("MlpLstmPolicy", train_env, verbose=0, seed=seed, ent_coef=parameters["ent_coef"])
     else:
         # model = PPO("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef= 0.01, n_steps= 2048, learning_rate= 0.00025, batch_size= 128) #ent_coef=parameters["ent_coef"])
-        model = PPO("MlpPolicy", train_env, verbose=0, seed=seed) #ent_coef=parameters["ent_coef"])
+        model = PPO("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=parameters["ent_coef"])
 
     return train_model(model_type, model, train_data, test_data, trade_data, parameters["training_rounds_per_contender"], contender_name, contenders, logger, parameters, turbulence)
 
@@ -241,10 +244,7 @@ def train_model(model_type, model, train_data, test_data, trade_data, training_r
     
     for i in range(training_rounds_per_contender):
 
-        if model_type == "A2C":
-            model.learn(total_timesteps=parameters["timesteps_per_round_A2C"], progress_bar=False, reset_num_timesteps=False)
-        else:
-            model.learn(total_timesteps=parameters["timesteps_per_round_PPO"], progress_bar=False, reset_num_timesteps=False)
+        model.learn(total_timesteps=parameters[f"timesteps_per_round_{model_type}"], progress_bar=False, reset_num_timesteps=False)
         test_history = test_model(model, test_data, parameters, parameters['starting_cash'], turbulence)
         sharpe, _ = get_sharpe_and_volatility(test_history, 'portfolio_value')
         if parameters['validation_parameter'] == 'sharpe':
@@ -253,18 +253,18 @@ def train_model(model_type, model, train_data, test_data, trade_data, training_r
             score = i + 1
         else:
             score = test_history.iloc[-1]["portfolio_value"] 
-        if score > best_score:
+        if score > best_score and score != 0:
             model.save(contender_name)
             best_score = score
 
         if parameters["verbose"] == True:
             logger.print_out(f"    - Ended scoring round {i + 1}/{training_rounds_per_contender} with score {score:.2f}, ending value: {test_history.iloc[-1]['portfolio_value'] :.2f}, trading value: {test_model(model, trade_data, parameters, parameters['starting_cash'], turbulence, True).iloc[-1]['portfolio_value']:.2f}, trading sharpe: {get_sharpe_and_volatility(test_model(model, trade_data, parameters, parameters['starting_cash'], turbulence, True), 'portfolio_value')[0]:.2f}")
 
-        # logger.print_out(f"    - Ended training round {i + 1}/{training_rounds_per_contender} with score {best_score:.2f}")
+        logger.print_out(f"    - {model_type} ended training round {i + 1}/{training_rounds_per_contender} with score {best_score:.2f}, trading sharpe: {get_sharpe_and_volatility(test_model(model, trade_data, parameters, parameters['starting_cash'], turbulence, True), 'portfolio_value')[0]:.2f}")
 
     contenders.append({
         "model": contender_name,
         "score": round(float(best_score), 2)
     })
 
-    logger.print_out(f"- Ended training with score {best_score:.2f}")
+    # logger.print_out(f"- Ended training with score {best_score:.2f}")

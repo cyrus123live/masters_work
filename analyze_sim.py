@@ -131,6 +131,8 @@ run_directory = 'runs/2024-11-18-21-11-46' # 32 Models
 
 run_directory = '/Volumes/T7 Touch/masters_work backup/2024-11-20-08-41-48'
 run_directory = 'runs/2024-12-28-15-02-26'
+run_directory = 'runs/2024-12-30-14-14-54' # First example with no normalization, notice how models converge to similar strategies now
+run_directory = 'runs/2024-12-30-15-54-10' # Beating the buy and hold at the start using a ton of indicators. Beautiful correlation up to 2020-07, proceeds to totally shit the bed
 
 
 if len(sys.argv) > 1:
