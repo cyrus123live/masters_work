@@ -111,6 +111,7 @@ def process_data(data):
 
     processed_data = pd.DataFrame(index=data.index)
     processed_data['close'] = data['close']
+    processed_data['open'] = data['open']
     processed_data['low'] = data['low']
     processed_data['high'] = data['high']
     processed_data['volume'] = data['volume']
@@ -122,10 +123,10 @@ def process_data(data):
     processed_data["setup_count"] = td_combo["setup_count"]
     processed_data["countdown_count"] = td_combo["countdown_count"]
 
-    # processed_data['macd'] = stock['macd']
-    # processed_data['rsi'] = stock['rsi_30']
-    # processed_data['cci'] = stock['cci_30']
-    # processed_data['adx'] = stock['dx_30']
+    processed_data['macd'] = stock['macd']
+    processed_data['rsi'] = stock['rsi_30']
+    processed_data['cci'] = stock['cci_30']
+    processed_data['adx'] = stock['dx_30']
 
     processed_data['log-return'] = stock['log-ret']
     processed_data['rsi'] = stock['rsi']
@@ -136,10 +137,10 @@ def process_data(data):
     processed_data['supertrend_lb'] = stock['supertrend_lb']
     processed_data['chop'] = stock['chop']
 
-    stockstats.set_dft_window('macd', (6, 13, 5))
-    processed_data["macd"] = stock['macd']
-    processed_data["macds"] = stock['macds']
-    processed_data["macdh"] = stock['macdh']
+    # stockstats.set_dft_window('macd', (6, 13, 5))
+    # processed_data["macd"] = stock['macd']
+    # processed_data["macds"] = stock['macds']
+    # processed_data["macdh"] = stock['macdh']
 
     # processed_data["Close"] = data["close"]
     # processed_data["Change"] = data["close"].diff()
