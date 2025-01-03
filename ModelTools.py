@@ -24,7 +24,7 @@ import time
 import copy
 from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
 from sb3_contrib import RecurrentPPO
-
+import sys
 
 class Logger():
     def __init__(self, run_folder_name):
@@ -121,6 +121,17 @@ def get_buy_hold_strategy(history, parameters):
     buy_hold_history["portfolio_value"] = [sum([history.iloc[j]["closes"][i] * equal_parts_shares[i] for i in range(len(parameters["tickers"]))]) for j in range(len(history))]  
     return buy_hold_history
 
+def get_stats_from_history(name, history):
+    sharpe, volatility = get_sharpe_and_volatility(history, 'portfolio_value')
+    cumulative, annual = get_cumulative_and_annual_returns(history, 'portfolio_value')
+    max_drawdown = get_max_drawdown(history, 'portfolio_value')
+
+    print(f"\n{name}:\n")
+    print(f"- Cumulative return: {cumulative * 100:.2f}%")
+    print(f"- Annual return: {annual * 100:.2f}%")
+    print(f"- Annual volatility: {volatility * 100:.2f}%")
+    print(f"- Sharpe ratio: {sharpe:.2f}")
+    print(f"- Max drawdown: {max_drawdown * 100:.2f}%")
 
 def print_stats_from_history(history, parameters):
 
@@ -128,32 +139,20 @@ def print_stats_from_history(history, parameters):
 
     buy_hold_history = get_buy_hold_strategy(history, parameters)
 
-    sharpe, volatility = get_sharpe_and_volatility(buy_hold_history, 'portfolio_value')
-    cumulative, annual = get_cumulative_and_annual_returns(buy_hold_history, 'portfolio_value')
-    max_drawdown = get_max_drawdown(buy_hold_history, 'portfolio_value')
-
-    print(f"\nBuy and Hold Strategy:\n")
-    print(f"- Cumulative return: {cumulative * 100:.2f}%")
-    print(f"- Annual return: {annual * 100:.2f}%")
-    print(f"- Annual volatility: {volatility * 100:.2f}%")
-    print(f"- Sharpe ratio: {sharpe:.2f}")
-    print(f"- Max drawdown: {max_drawdown * 100:.2f}%")
-    
-    sharpe, volatility = get_sharpe_and_volatility(history, 'portfolio_value')
-    cumulative, annual = get_cumulative_and_annual_returns(history, 'portfolio_value')
-    max_drawdown = get_max_drawdown(history, 'portfolio_value')
-
-    print(f"\n\nTest Strategy:\n")
-    print(f"- Cumulative return: {cumulative * 100:.2f}%")
-    print(f"- Annual return: {annual * 100:.2f}%")
-    print(f"- Annual volatility: {volatility * 100:.2f}%")
-    print(f"- Sharpe ratio: {sharpe:.2f}")
-    print(f"- Max drawdown: {max_drawdown * 100:.2f}%")
+    get_stats_from_history("Buy and Hold Strategy", buy_hold_history)
+    get_stats_from_history("Test Strategy", history)
 
     print("\n")
 
 def print_stats_from_histories(histories, parameters):
-    
+
+    print(f"\nRun Statistics for run [{histories[0].index[0]}, {histories[0].index[-1]}]:\n")
+
+    buy_hold_history = get_buy_hold_strategy(histories[0], parameters)
+    get_stats_from_history("Buy and Hold Strategy", buy_hold_history)
+
+    for i, h in enumerate(histories):
+        get_stats_from_history(f"Test {i}", h)
 
 def get_distinct_colors(n):
     hues = [i / n for i in range(n)]
@@ -194,6 +193,32 @@ def plot_history(history, parameters):
     p.legend()
     plt.show()
 
+def plot_histories(histories, parameters):
+
+    # figure = plt.figure()
+    i = 0
+    buy_hold_history = get_buy_hold_strategy(histories[0], parameters)
+
+    for j, history in enumerate(histories):
+        plt.subplot(len(histories), 1, j + 1)
+        to_plot = pd.DataFrame(index=history.index)
+        colours = get_distinct_colors(len(history["closes"].iloc[0]))
+        if parameters["shorting"]:
+            num_stocks = int(len(history["closes"].iloc[0]) / 2)
+        else:
+            num_stocks = len(history["closes"].iloc[0])
+        for i in range(num_stocks):
+            close_data = pd.DataFrame(index=history["closes"].index)
+            close_data["close"] = [float(history["closes"].iloc[j][i]) for j in range(len(history["closes"]))]
+            to_plot[f'close_{i}'] = [float(c) for c in close_data["close"] / float(history["closes"].iloc[0][i])]
+            plt.plot(to_plot[f'close_{i}'], color=colours[i])
+
+        to_plot['buy_hold'] = buy_hold_history["portfolio_value"] / buy_hold_history.iloc[0]["portfolio_value"]
+        to_plot['portfolio'] = history["portfolio_value"] / history.iloc[0]["portfolio_value"]
+        plt.plot(to_plot['portfolio'], label="Portfolio Value")
+        plt.plot(to_plot['buy_hold'], label="Buy and Hold Strategy", color="black")
+
+    plt.show()
 
 # Returns a history dataframe using TradingEnv
 def test_model(model, test_data, parameters, cash, turbulence, trading = False):
