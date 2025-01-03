@@ -77,7 +77,7 @@ class TradingEnv(gym.Env):
         self.last_action = action
 
         # Calculate if we should stop due to turbulence
-        if self.trading:
+        if self.trading and self.parameters["use_turbulence"]:
             turbulence = self.turbulence[self.turbulence["datadate"] == self.data[0].index[self.current_step]]["turbulence"].iloc[0]
             if turbulence >= self.parameters["turbulence_threshold"]:
                 portfolio_value = sum([df["close"].iloc[self.current_step] * self.stock[i] for i, df in enumerate(self.data)]) + self.cash

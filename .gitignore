@@ -4,3 +4,4 @@ alphavantage.py
 .env
 stock_data/crypto
 stock_data/btc_data.csv
+.vscode

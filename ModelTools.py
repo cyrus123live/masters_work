@@ -1,5 +1,4 @@
-from stable_baselines3 import PPO
-from stable_baselines3 import A2C
+from stable_baselines3 import PPO, A2C, DDPG
 from TradingEnv import TradingEnv
 import numpy as np
 import matplotlib.pyplot as plt 
@@ -10,6 +9,7 @@ import logging
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.logger import Figure
+from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 import json
 import csv
 import math
@@ -152,6 +152,9 @@ def print_stats_from_history(history, parameters):
 
     print("\n")
 
+def print_stats_from_histories(histories, parameters):
+    
+
 def get_distinct_colors(n):
     hues = [i / n for i in range(n)]
     random.shuffle(hues)  # Shuffle to add randomness
@@ -227,7 +230,17 @@ def train(model_type, seed, train_data, test_data, trade_data, parameters, conte
         # model = A2C("MlpPolicy", train_env, verbose=0, seed=seed, n_steps= 5, ent_coef= 0.005, learning_rate= 0.0007) #ent_coef=parameters["ent_coef"])
         model = A2C("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=parameters["ent_coef"])
     elif model_type == "Recurrent_PPO":
-        model = RecurrentPPO("MlpLstmPolicy", train_env, verbose=0, seed=seed, ent_coef=parameters["ent_coef"])
+        policy_kwargs = dict(
+            activation_fn=torch.nn.Tanh, lstm_hidden_size=512, n_lstm_layers=1, shared_lstm=True, enable_critic_lstm=False
+        )
+        model = RecurrentPPO("MlpLstmPolicy", train_env, verbose=0, seed=seed, ent_coef=parameters["ent_coef"], policy_kwargs=policy_kwargs)
+    elif model_type == "DDPG":
+        if parameters["buy_sell_action_space"] == "discrete":
+            n_actions = train_env.action_space.n
+        else:
+            n_actions = train_env.action_space.shape[-1]
+        action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(n_actions), sigma=float(0.5) * np.ones(n_actions))
+        model = DDPG("MlpPolicy", train_env, verbose=0, seed=seed, action_noise=action_noise)
     else:
         # model = PPO("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef= 0.01, n_steps= 2048, learning_rate= 0.00025, batch_size= 128) #ent_coef=parameters["ent_coef"])
         model = PPO("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=parameters["ent_coef"])
@@ -240,8 +253,12 @@ def train_model(model_type, model, train_data, test_data, trade_data, training_r
     best_score = -100
     score = 0
 
-    logger.print_out("Started training a model")
-    
+    logger.print_out(f"Started training {model_type} model")
+
+    # print(train_data[0])
+    # print(test_data[0])
+    # print(trade_data[0])
+
     for i in range(training_rounds_per_contender):
 
         model.learn(total_timesteps=parameters[f"timesteps_per_round_{model_type}"], progress_bar=False, reset_num_timesteps=False)
@@ -253,14 +270,12 @@ def train_model(model_type, model, train_data, test_data, trade_data, training_r
             score = i + 1
         else:
             score = test_history.iloc[-1]["portfolio_value"] 
-        if score > best_score and score != 0:
+        if score >= best_score and score != 0:
             model.save(contender_name)
             best_score = score
 
         if parameters["verbose"] == True:
-            logger.print_out(f"    - Ended scoring round {i + 1}/{training_rounds_per_contender} with score {score:.2f}, ending value: {test_history.iloc[-1]['portfolio_value'] :.2f}, trading value: {test_model(model, trade_data, parameters, parameters['starting_cash'], turbulence, True).iloc[-1]['portfolio_value']:.2f}, trading sharpe: {get_sharpe_and_volatility(test_model(model, trade_data, parameters, parameters['starting_cash'], turbulence, True), 'portfolio_value')[0]:.2f}")
-
-        logger.print_out(f"    - {model_type} ended training round {i + 1}/{training_rounds_per_contender} with score {best_score:.2f}, trading sharpe: {get_sharpe_and_volatility(test_model(model, trade_data, parameters, parameters['starting_cash'], turbulence, True), 'portfolio_value')[0]:.2f}")
+            logger.print_out(f"    - {model_type} ended training round {i + 1:2d}/{training_rounds_per_contender} with training {get_sharpe_and_volatility(test_model(model, train_data, parameters, parameters['starting_cash'], turbulence, True), 'portfolio_value')[0]:.2f}, testing {score:.2f}, and trading: {get_sharpe_and_volatility(test_model(model, trade_data, parameters, parameters['starting_cash'], turbulence, True), 'portfolio_value')[0]:.2f}")
 
     contenders.append({
         "model": contender_name,

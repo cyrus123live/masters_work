@@ -1,5 +1,4 @@
-from stable_baselines3 import PPO
-from stable_baselines3 import A2C
+from stable_baselines3 import A2C, PPO, DDPG
 from TradingEnv import TradingEnv
 import StockData
 import ModelTools
@@ -18,39 +17,42 @@ import json
 def main():
 
     parameters = {
-        # "starting_month": "2020-4", # Half-hourly data doesn't work for 2020-01 and below (this parameter is for trading month)
-        # "ending_month": "2023-4",
-        "starting_month": "2016-1", 
-        "ending_month": "2020-7",
-        "train_months": 3,
-        "test_months": 3,
-        "trade_months": 3,
+        "starting_month": "2020-4", # Half-hourly data doesn't work for 2020-01 and below (this parameter is for trading month)
+        "ending_month": "2023-4",
+        # "starting_month": "2016-1", 
+        # "ending_month": "2020-7",
+        "train_months": 1,
+        "test_months": 1,
+        "trade_months": 1,
         "num_recurrent_ppo": 0,
+        "num_ddpg": 0, # Note: DDPG doesn't work for discrete yet 
         "num_ppo": 0,
-        "num_a2c": 16,
+        "num_a2c": 32, 
         "test_before_train": False,
         "training_rounds_per_contender": 1,
-        "timesteps_per_round_Recurrent_PPO": 1500, 
-        "timesteps_per_round_PPO": 1500, 
+        "timesteps_per_round_Recurrent_PPO": 1300,
+        "timesteps_per_round_DDPG": 10000, 
+        "timesteps_per_round_PPO": 50000, 
         "timesteps_per_round_A2C": 25000, 
         "starting_cash": 1000000,
-        "verbose": False,
-        "buy_sell_action_space": "continuous", 
+        "buy_sell_action_space": "discrete", 
         "ent_coef": 0,
         "shorting": False,
         'validation_parameter': "sharpe",
-        # "indicators": ["close_normalized", 'macd_normalized', 'rsi_normalized', 'cci_normalized', "adx_normalized"],
-        "indicators": ["close", "open", 'high', "low", "volume", 'macd', 'rsi', 'cci', "adx"],
+        "indicators": ["close_normalized", 'macd_normalized', 'rsi_normalized', 'cci_normalized', "adx_normalized"],
+        # "indicators": ["close", "open", 'high', "low", "volume", 'macd', 'rsi', 'cci', "adx"],
         # "indicators": ["close", "setup_cat", "countdown_completed_cat", "setup_count", "countdown_count"],
         # "indicators": ["close", "low", "high", "volume", "setup_cat", "countdown_completed_cat", "setup_count", "countdown_count", "log-return", "rsi", "stoch_rsi", "atr", "mfi", "supertrend_ub", "supertrend_lb", "chop", "macd", "macds", "macdh"],
         # "indicators": ["close_normalized"],
-        "fees": 0, # Doesn't work for crypto yet
+        # "indicators": ["close"],
+        "fees": 0, # Doesn't work for crypto yet (note: ensemble uses 0.001)
         "use_turbulence": False,
         "turbulence_threshold": 200, # Doesn't work for crypto yet
-        "t": "daily",
-        # "tickers": ["BTCUSDT", "ETHUSDT", "XRPUSDT", "BNBUSDT", "TRXUSDT"],
+        "t": "half-hourly",
+        "tickers": ["BTCUSDT", "ETHUSDT", "XRPUSDT", "BNBUSDT", "TRXUSDT"],
         # "tickers": ["BTCUSDT"],
-        "tickers": ['AXP', 'AAPL', 'VZ', 'BA', 'CAT', 'JPM', 'CVX', 'KO', 'DIS', 'DD', 'XOM', 'HD', 'INTC', 'IBM', 'JNJ', 'MCD', 'MRK', 'MMM', 'NKE', 'PFE', 'PG', 'UNH', 'RTX', 'WMT', 'WBA', 'MSFT', 'CSCO', 'TRV', 'GS', 'V'],
+        # "tickers": ['AXP', 'AAPL', 'VZ', 'BA', 'CAT', 'JPM', 'CVX', 'KO', 'DIS', 'DD', 'XOM', 'HD', 'INTC', 'IBM', 'JNJ', 'MCD', 'MRK', 'MMM', 'NKE', 'PFE', 'PG', 'UNH', 'RTX', 'WMT', 'WBA', 'MSFT', 'CSCO', 'TRV', 'GS', 'V'],
+        "verbose": True,
         "cores": 4
     }
 
@@ -119,10 +121,6 @@ def main():
             except:
                 trade_data = test_data
 
-            # print(train_data)
-            # print(test_data)
-            # print(trade_data)
-
             if not parameters["use_turbulence"]:
                 turbulence = pd.DataFrame(index = trade_data[0].index)
                 turbulence["datadate"] = turbulence.index
@@ -138,7 +136,7 @@ def main():
             # Train our contenders using multiprocessing 
             processes = []
             contenders = manager.list()
-            for i in range(int(parameters["num_a2c"]) + int(parameters["num_ppo"]) + int(parameters["num_recurrent_ppo"])):
+            for i in range(int(parameters["num_a2c"]) + int(parameters["num_ppo"]) + int(parameters["num_recurrent_ppo"]) + int(parameters["num_ddpg"])):
                 seed = int(random.random() * 100000)
                 if i < int(parameters["num_a2c"]):
                     contender_name = f"{trade_window_folder_name}/models/A2C_{i}"
@@ -146,6 +144,9 @@ def main():
                 elif i < int(parameters["num_a2c"]) + int(parameters["num_recurrent_ppo"]):
                     contender_name = f"{trade_window_folder_name}/models/Recurrent_PPO_{i}"
                     p = multiprocessing.Process(target=ModelTools.train, args=("Recurrent_PPO", seed, train_data, test_data, trade_data, parameters, contender_name, contenders, logger, turbulence))
+                elif i < int(parameters["num_a2c"]) + int(parameters["num_recurrent_ppo"]) + int(parameters["num_ddpg"]):
+                    contender_name = f"{trade_window_folder_name}/models/DDPG_{i}"
+                    p = multiprocessing.Process(target=ModelTools.train, args=("DDPG", seed, train_data, test_data, trade_data, parameters, contender_name, contenders, logger, turbulence))
                 else:
                     contender_name = f"{trade_window_folder_name}/models/PPO_{i}"
                     p = multiprocessing.Process(target=ModelTools.train, args=("PPO", seed, train_data, test_data, trade_data, parameters, contender_name, contenders, logger, turbulence))
@@ -175,6 +176,8 @@ def main():
                 model = A2C.load(contenders[0]['model'])
             elif "Recurrent_PPO" in contenders[0]['model']:
                 model = RecurrentPPO.load(contenders[0]['model'])
+            elif "DDPG" in contenders[0]['model']:
+                model = DDPG.load(contenders[0]['model'])
 
             trade_window_history = ModelTools.test_model(model, trade_data, parameters, cash, turbulence, True)
             ModelTools.write_history_to_file(trade_window_history, f"{trade_window_folder_name}/trade_window_history")

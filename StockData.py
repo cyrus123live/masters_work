@@ -116,26 +116,26 @@ def process_data(data):
     processed_data['high'] = data['high']
     processed_data['volume'] = data['volume']
 
-    td_combo = calculate_td_combo(processed_data)
+    # td_combo = calculate_td_combo(processed_data)
 
-    processed_data["setup_cat"] = td_combo["setup_cat"]
-    processed_data["countdown_completed_cat"] = td_combo["countdown_completed_cat"]
-    processed_data["setup_count"] = td_combo["setup_count"]
-    processed_data["countdown_count"] = td_combo["countdown_count"]
+    # processed_data["setup_cat"] = td_combo["setup_cat"]
+    # processed_data["countdown_completed_cat"] = td_combo["countdown_completed_cat"]
+    # processed_data["setup_count"] = td_combo["setup_count"]
+    # processed_data["countdown_count"] = td_combo["countdown_count"]
 
     processed_data['macd'] = stock['macd']
     processed_data['rsi'] = stock['rsi_30']
     processed_data['cci'] = stock['cci_30']
     processed_data['adx'] = stock['dx_30']
 
-    processed_data['log-return'] = stock['log-ret']
-    processed_data['rsi'] = stock['rsi']
-    processed_data['stoch_rsi'] = stock['stochrsi']
-    processed_data['atr'] = stock['atr']
-    processed_data['mfi'] = stock['mfi']
-    processed_data['supertrend_ub'] = stock['supertrend_ub']
-    processed_data['supertrend_lb'] = stock['supertrend_lb']
-    processed_data['chop'] = stock['chop']
+    # processed_data['log-return'] = stock['log-ret']
+    # processed_data['rsi'] = stock['rsi']
+    # processed_data['stoch_rsi'] = stock['stochrsi']
+    # processed_data['atr'] = stock['atr']
+    # processed_data['mfi'] = stock['mfi']
+    # processed_data['supertrend_ub'] = stock['supertrend_ub']
+    # processed_data['supertrend_lb'] = stock['supertrend_lb']
+    # processed_data['chop'] = stock['chop']
 
     # stockstats.set_dft_window('macd', (6, 13, 5))
     # processed_data["macd"] = stock['macd']
@@ -151,13 +151,13 @@ def process_data(data):
     # processed_data["Close_STD"] = processed_data["Close"].rolling(window=20).std()
     # -------------------------------------
 
-    # for feature in processed_data.columns:
-    #     # Calculate rolling mean and std
-    #     rolling_mean = processed_data[feature].rolling(window=20).mean()
-    #     rolling_std = processed_data[feature].rolling(window=20).std()
+    for feature in processed_data.columns:
+        # Calculate rolling mean and std
+        rolling_mean = processed_data[feature].rolling(window=20).mean()
+        rolling_std = processed_data[feature].rolling(window=20).std()
 
-    #     # Normalize the feature
-    #     processed_data[f'{feature}_normalized'] = (processed_data[feature] - rolling_mean) / rolling_std
+        # Normalize the feature
+        processed_data[f'{feature}_normalized'] = (processed_data[feature] - rolling_mean) / rolling_std
 
         # Min-Max Scaling to range -1 to 1 using rolling window 
         # rolling_min = processed_data[f'{feature}_Normalized'].rolling(window=20).min()
