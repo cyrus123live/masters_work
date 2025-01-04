@@ -199,11 +199,11 @@ def plot_histories(histories, parameters):
     # figure = plt.figure()
     i = 0
     buy_hold_history = get_buy_hold_strategy(histories[0], parameters)
+    colours = get_distinct_colors(len(histories[0]["closes"].iloc[0]))
 
     for j, history in enumerate(histories):
-        plt.subplot(len(histories), 1, j + 1)
+        # plt.subplot(math.ceil(len(histories) / 2), 2, j + 1)
         to_plot = pd.DataFrame(index=history.index)
-        colours = get_distinct_colors(len(history["closes"].iloc[0]))
         if parameters["shorting"]:
             num_stocks = int(len(history["closes"].iloc[0]) / 2)
         else:
@@ -213,12 +213,14 @@ def plot_histories(histories, parameters):
             close_data["close"] = [float(history["closes"].iloc[j][i]) for j in range(len(history["closes"]))]
             to_plot[f'close_{i}'] = [float(c) for c in close_data["close"] / float(history["closes"].iloc[0][i])]
             plt.plot(to_plot[f'close_{i}'], color=colours[i])
+        
+    for j, history in enumerate(histories):
 
-        to_plot['buy_hold'] = buy_hold_history["portfolio_value"] / buy_hold_history.iloc[0]["portfolio_value"]
         to_plot['portfolio'] = history["portfolio_value"] / history.iloc[0]["portfolio_value"]
         plt.plot(to_plot['portfolio'], label="Portfolio Value")
-        plt.plot(to_plot['buy_hold'], label="Buy and Hold Strategy", color="black")
 
+    to_plot['buy_hold'] = buy_hold_history["portfolio_value"] / buy_hold_history.iloc[0]["portfolio_value"]
+    plt.plot(to_plot['buy_hold'], label="Buy and Hold Strategy", color="black")
     plt.show()
 
 # Returns a history dataframe using TradingEnv
@@ -310,7 +312,7 @@ def train_model(model_type, model, train_data, test_data, trade_data, training_r
 
     for i in range(training_rounds_per_contender):
 
-        model.learn(total_timesteps=parameters[f"timesteps_per_round_{model_type}"], progress_bar=False, reset_num_timesteps=False)
+        model.learn(total_timesteps=len(train_data), progress_bar=False, reset_num_timesteps=False)
         test_history = test_model(model, test_data, parameters, parameters['starting_cash'], turbulence)
         sharpe, _ = get_sharpe_and_volatility(test_history, 'portfolio_value')
         if parameters['validation_parameter'] == 'sharpe':

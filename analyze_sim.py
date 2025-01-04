@@ -134,12 +134,14 @@ run_directory = 'runs/2024-12-28-15-02-26'
 run_directory = 'runs/2024-12-30-14-14-54' # First example with no normalization, notice how models converge to similar strategies now
 run_directory = 'runs/2024-12-30-15-54-10' # Beating the buy and hold at the start using a ton of indicators. Beautiful correlation up to 2020-07, proceeds to totally shit the bed for two runs
 run_directory = 'runs/2024-12-31-09-39-24' # Going back to Ensemble with no normalization (one good (matching paper), one meh result, should do again)
-# run_directory = 'runs/2025-01-01-14-54-03' # Terrible performance for continuous 8*4 model crypto portfolio with non-normalized close only obs 
-# run_directory = 'runs/2025-01-01-18-43-29' # 32 A2C non-normalized close gets royally destroyed
-# run_directory = 'runs/2025-01-01-20-17-57' # First recurrent test, 10 * 1300 rounds, 1/1/1 activation_fn=torch.nn.Tanh, lstm_hidden_size=512, n_lstm_layers=1, shared_lstm=True, enable_critic_lstm=False
-# run_directory = 'runs/2025-01-01-22-20-51' # Five more rounds of recurrent test above but with 1/0/1, fared poorly
-# run_directory = 'runs/2025-01-02-13-45-34' # Five runs of A2C method
-
+run_directory = 'runs/2025-01-01-14-54-03' # Terrible performance for continuous 8*4 model crypto portfolio with non-normalized close only obs 
+run_directory = 'runs/2025-01-01-18-43-29' # 32 A2C non-normalized close gets royally destroyed
+run_directory = 'runs/2025-01-01-20-17-57' # First recurrent test, 10 * 1300 rounds, 1/1/1 activation_fn=torch.nn.Tanh, lstm_hidden_size=512, n_lstm_layers=1, shared_lstm=True, enable_critic_lstm=False
+run_directory = 'runs/2025-01-01-22-20-51' # Five more rounds of recurrent test above but with 1/0/1, fared poorly
+run_directory = 'runs/2025-01-02-13-45-34' # Five runs of A2C method, 1 beats by a lot, 3 underperform for most of the run but come out on top, and one severely underperforms
+run_directory = 'runs/2025-01-03-16-14-01'
+run_directory = 'runs/2025-01-03-18-18-35' # Five runs of closest recurrent PPO implementation possible without creating custom policy_kwargs LSTM (12 month training, DJI, Un-normalized, 30*length of training data timesteps) (random performance)
+run_directory = 'runs/2025-01-03-21-00-43' # 7 runs of non-normalized A2C setup, absolutely abysmal, worse then normalized
 
 if len(sys.argv) > 1:
     run_directory = sys.argv[1]
