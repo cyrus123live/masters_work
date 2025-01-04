@@ -25,6 +25,7 @@ import copy
 from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
 from sb3_contrib import RecurrentPPO
 import sys
+import torch.optim as optim
 
 class Logger():
     def __init__(self, run_folder_name):
@@ -254,11 +255,6 @@ def train(model_type, seed, train_data, test_data, trade_data, parameters, conte
     if model_type == "A2C":
         # model = A2C("MlpPolicy", train_env, verbose=0, seed=seed, n_steps= 5, ent_coef= 0.005, learning_rate= 0.0007) #ent_coef=parameters["ent_coef"])
         model = A2C("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=parameters["ent_coef"])
-    elif model_type == "Recurrent_PPO":
-        policy_kwargs = dict(
-            activation_fn=torch.nn.Tanh, lstm_hidden_size=512, n_lstm_layers=1, shared_lstm=True, enable_critic_lstm=False
-        )
-        model = RecurrentPPO("MlpLstmPolicy", train_env, verbose=0, seed=seed, ent_coef=parameters["ent_coef"], policy_kwargs=policy_kwargs)
     elif model_type == "DDPG":
         if parameters["buy_sell_action_space"] == "discrete":
             n_actions = train_env.action_space.n
@@ -266,9 +262,37 @@ def train(model_type, seed, train_data, test_data, trade_data, parameters, conte
             n_actions = train_env.action_space.shape[-1]
         action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(n_actions), sigma=float(0.5) * np.ones(n_actions))
         model = DDPG("MlpPolicy", train_env, verbose=0, seed=seed, action_noise=action_noise)
-    else:
+    elif model_type == "PPO":
         # model = PPO("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef= 0.01, n_steps= 2048, learning_rate= 0.00025, batch_size= 128) #ent_coef=parameters["ent_coef"])
         model = PPO("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=parameters["ent_coef"])
+    elif model_type == "Recurrent_PPO":
+        policy_kwargs = dict(
+            activation_fn=torch.nn.Tanh, 
+            net_arch=dict(pi=[128, 128, 128], vf=[128, 128, 128]),
+            lstm_hidden_size=512, 
+            n_lstm_layers=1, 
+            shared_lstm=True, 
+            enable_critic_lstm=False
+        )
+        model = RecurrentPPO("MlpLstmPolicy", 
+            train_env, 
+            verbose=0, 
+            seed=seed, 
+            policy_kwargs=policy_kwargs,
+            gamma=0.99,
+            n_steps=128,
+            vf_coef=0.5,
+            ent_coef=0.01,
+            clip_range=0.2,
+            max_grad_norm=0.5,
+            learning_rate=3e-4
+        )
+        model.policy.optimizer = optim.Adam(
+            model.policy.parameters(),
+            lr=3e-4,              # Learning Rate
+            betas=(0.9, 0.999),   # β₁ and β₂
+            eps=1e-8              # ε
+)
 
     return train_model(model_type, model, train_data, test_data, trade_data, parameters["training_rounds_per_contender"], contender_name, contenders, logger, parameters, turbulence)
 
