@@ -17,30 +17,30 @@ import json
 def main():
 
     parameters = {
-        "starting_month": "2020-4", # Half-hourly data doesn't work for 2020-01 and below (this parameter is for trading month)
+        "starting_month": "2022-4", # Half-hourly data doesn't work for 2020-01 and below (this parameter is for trading month)
         "ending_month": "2023-4",
         # "starting_month": "2016-1", 
         # "ending_month": "2020-7",
-        "train_months": 1,
-        "test_months": 1,
+        "train_months": 12,
+        "test_months": 0,
         "trade_months": 1,
-        "num_recurrent_ppo": 0,
+        "num_recurrent_ppo": 1,
         "num_ddpg": 0, # Note: DDPG doesn't work for discrete yet 
         "num_ppo": 0,
-        "num_a2c": 32, 
+        "num_a2c": 0, 
         "test_before_train": False,
-        "training_rounds_per_contender": 1,
-        "timesteps_per_round_Recurrent_PPO": 30,
+        "training_rounds_per_contender": 30,
+        "timesteps_per_round_Recurrent_PPO": 3000,
         "timesteps_per_round_DDPG": 10000, 
         "timesteps_per_round_PPO": 50000, 
-        "timesteps_per_round_A2C": 25000, # Note: currently timesteps is actually just set to train data length
+        "timesteps_per_round_A2C": 25000, 
         "starting_cash": 1000000,
-        "buy_sell_action_space": "discrete", 
+        "buy_sell_action_space": "continuous", 
         "ent_coef": 0,
         "shorting": False,
-        'validation_parameter': "sharpe",
+        'validation_parameter': "last",
         # "indicators": ["close_normalized", 'macd_normalized', 'rsi_normalized', 'cci_normalized', "adx_normalized"],
-        "indicators": ["close", "open", 'high', "low", "volume", 'macd', 'rsi', 'cci', "adx"],
+        "indicators": ["close", 'macd', 'rsi', 'cci', "adx"],
         # "indicators": ["close", "setup_cat", "countdown_completed_cat", "setup_count", "countdown_count"],
         # "indicators": ["close", "low", "high", "volume", "setup_cat", "countdown_completed_cat", "setup_count", "countdown_count", "log-return", "rsi", "stoch_rsi", "atr", "mfi", "supertrend_ub", "supertrend_lb", "chop", "macd", "macds", "macdh"],
         # "indicators": ["close_normalized"],
@@ -48,10 +48,10 @@ def main():
         "fees": 0, # Doesn't work for crypto yet (note: ensemble uses 0.001)
         "use_turbulence": False,
         "turbulence_threshold": 200, # Doesn't work for crypto yet
-        "t": "half-hourly",
-        "tickers": ["BTCUSDT", "ETHUSDT", "XRPUSDT", "BNBUSDT", "TRXUSDT"],
+        "t": "daily",
+        # "tickers": ["BTCUSDT", "ETHUSDT", "XRPUSDT", "BNBUSDT", "TRXUSDT"],
         # "tickers": ["BTCUSDT"],
-        # "tickers": ['AXP', 'AAPL', 'VZ', 'BA', 'CAT', 'JPM', 'CVX', 'KO', 'DIS', 'DD', 'XOM', 'HD', 'INTC', 'IBM', 'JNJ', 'MCD', 'MRK', 'MMM', 'NKE', 'PFE', 'PG', 'UNH', 'RTX', 'WMT', 'WBA', 'MSFT', 'CSCO', 'TRV', 'GS', 'V'],
+        "tickers": ['AXP', 'AAPL', 'VZ', 'BA', 'CAT', 'JPM', 'CVX', 'KO', 'DIS', 'DD', 'XOM', 'HD', 'INTC', 'IBM', 'JNJ', 'MCD', 'MRK', 'MMM', 'NKE', 'PFE', 'PG', 'UNH', 'RTX', 'WMT', 'WBA', 'MSFT', 'CSCO', 'TRV', 'GS', 'V'],
         "verbose": True,
         "cores": 4
     }
@@ -170,16 +170,18 @@ def main():
 
             # Get best contender and trade with them
             logger.print_out(f"\nStarting trading with model with score {contenders[0]['score']:.2f}")
-            if "PPO" in contenders[0]['model']:
+            model_type = "PPO"
+            if "Recurrent_PPO" in contenders[0]['model']:
                 model = PPO.load(contenders[0]['model'])
+                model_type = "Recurrent_PPO"
             elif "A2C" in contenders[0]['model']:
                 model = A2C.load(contenders[0]['model'])
-            elif "Recurrent_PPO" in contenders[0]['model']:
-                model = RecurrentPPO.load(contenders[0]['model'])
+            elif "PPO" in contenders[0]['model']:
+                model = PPO.load(contenders[0]['model'])
             elif "DDPG" in contenders[0]['model']:
                 model = DDPG.load(contenders[0]['model'])
 
-            trade_window_history = ModelTools.test_model(model, trade_data, parameters, cash, turbulence, True)
+            trade_window_history = ModelTools.test_model(model, trade_data, parameters, cash, turbulence, True, model_type)
             ModelTools.write_history_to_file(trade_window_history, f"{trade_window_folder_name}/trade_window_history")
 
             # Update running balance
