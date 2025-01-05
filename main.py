@@ -17,11 +17,11 @@ import json
 def main():
 
     parameters = {
-        "starting_month": "2022-4", # Half-hourly data doesn't work for 2020-01 and below (this parameter is for trading month)
-        "ending_month": "2023-4",
-        # "starting_month": "2016-1", 
-        # "ending_month": "2020-7",
-        "train_months": 12,
+        # "starting_month": "2022-4", # Half-hourly data doesn't work for 2020-01 and below (this parameter is for trading month)
+        # "ending_month": "2023-4",
+        "starting_month": "2016-1", 
+        "ending_month": "2020-5",
+        "train_months": 84,
         "test_months": 0,
         "trade_months": 1,
         "num_recurrent_ppo": 1,
@@ -29,8 +29,8 @@ def main():
         "num_ppo": 0,
         "num_a2c": 0, 
         "test_before_train": False,
-        "training_rounds_per_contender": 30,
-        "timesteps_per_round_Recurrent_PPO": 3000,
+        "training_rounds_per_contender": 3000,
+        "timesteps_per_round_Recurrent_PPO": "data_len",
         "timesteps_per_round_DDPG": 10000, 
         "timesteps_per_round_PPO": 50000, 
         "timesteps_per_round_A2C": 25000, 

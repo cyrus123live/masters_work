@@ -306,7 +306,12 @@ def train_model(model_type, model, train_data, test_data, trade_data, training_r
 
     for i in range(training_rounds_per_contender):
 
-        model.learn(total_timesteps=parameters[f"timesteps_per_round_{model_type}"], progress_bar=False, reset_num_timesteps=False, tb_log_name=f"run_{i}")
+        if parameters[f"timesteps_per_round_{model_type}"] == "data_len":
+            timesteps = len(train_data)
+        else:
+            timesteps = parameters[f"timesteps_per_round_{model_type}"]
+        model.learn(total_timesteps=timesteps, progress_bar=False, reset_num_timesteps=False, tb_log_name=f"run_{i}")
+        
         test_history = test_model(model, test_data, parameters, parameters['starting_cash'], turbulence, False, model_type)
         sharpe, _ = get_sharpe_and_volatility(test_history, 'portfolio_value')
         if parameters['validation_parameter'] == 'sharpe':
