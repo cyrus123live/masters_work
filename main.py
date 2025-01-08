@@ -29,7 +29,7 @@ def main():
         "num_ppo": 0,
         "num_a2c": 0, 
         "test_before_train": False,
-        "training_rounds_per_contender": 3000,
+        "training_rounds_per_contender": 5000,
         "timesteps_per_round_Recurrent_PPO": "data_len",
         "timesteps_per_round_DDPG": 10000, 
         "timesteps_per_round_PPO": 50000, 
@@ -133,35 +133,53 @@ def main():
             logger.print_out(f"Finished initializing, beginning to train contenders.\n")
             training_start_time = dt.datetime.now()
 
+            if parameters["cores"] == 1:
+                contenders = []
+                for i in range(int(parameters["num_a2c"]) + int(parameters["num_ppo"]) + int(parameters["num_recurrent_ppo"]) + int(parameters["num_ddpg"])):
+                    seed = int(random.random() * 100000)
+                    if i < int(parameters["num_a2c"]):
+                        contender_name = f"{trade_window_folder_name}/models/A2C_{i}"
+                        ModelTools.train("A2C", seed, train_data, test_data, trade_data, parameters, trade_window_folder_name, contender_name, contenders, logger, turbulence)
+                    elif i < int(parameters["num_a2c"]) + int(parameters["num_recurrent_ppo"]):
+                        contender_name = f"{trade_window_folder_name}/models/Recurrent_PPO_{i}"
+                        ModelTools.train("Recurrent_PPO", seed, train_data, test_data, trade_data, parameters, trade_window_folder_name, contender_name, contenders, logger, turbulence)
+                    elif i < int(parameters["num_a2c"]) + int(parameters["num_recurrent_ppo"]) + int(parameters["num_ddpg"]):
+                        contender_name = f"{trade_window_folder_name}/models/DDPG_{i}"
+                        ModelTools.train("DDPG", seed, train_data, test_data, trade_data, parameters, trade_window_folder_name, contender_name, contenders, logger, turbulence)
+                    else:
+                        contender_name = f"{trade_window_folder_name}/models/PPO_{i}"
+                        ModelTools.train("PPO", seed, train_data, test_data, trade_data, parameters, trade_window_folder_name, contender_name, contenders, logger, turbulence)
+
             # Train our contenders using multiprocessing 
-            processes = []
-            contenders = manager.list()
-            for i in range(int(parameters["num_a2c"]) + int(parameters["num_ppo"]) + int(parameters["num_recurrent_ppo"]) + int(parameters["num_ddpg"])):
-                seed = int(random.random() * 100000)
-                if i < int(parameters["num_a2c"]):
-                    contender_name = f"{trade_window_folder_name}/models/A2C_{i}"
-                    p = multiprocessing.Process(target=ModelTools.train, args=("A2C", seed, train_data, test_data, trade_data, parameters, contender_name, contenders, logger, turbulence))
-                elif i < int(parameters["num_a2c"]) + int(parameters["num_recurrent_ppo"]):
-                    contender_name = f"{trade_window_folder_name}/models/Recurrent_PPO_{i}"
-                    p = multiprocessing.Process(target=ModelTools.train, args=("Recurrent_PPO", seed, train_data, test_data, trade_data, parameters, contender_name, contenders, logger, turbulence))
-                elif i < int(parameters["num_a2c"]) + int(parameters["num_recurrent_ppo"]) + int(parameters["num_ddpg"]):
-                    contender_name = f"{trade_window_folder_name}/models/DDPG_{i}"
-                    p = multiprocessing.Process(target=ModelTools.train, args=("DDPG", seed, train_data, test_data, trade_data, parameters, contender_name, contenders, logger, turbulence))
-                else:
-                    contender_name = f"{trade_window_folder_name}/models/PPO_{i}"
-                    p = multiprocessing.Process(target=ModelTools.train, args=("PPO", seed, train_data, test_data, trade_data, parameters, contender_name, contenders, logger, turbulence))
-                p.start()
-                processes.append(p)
+            else:
+                processes = []
+                contenders = manager.list()
+                for i in range(int(parameters["num_a2c"]) + int(parameters["num_ppo"]) + int(parameters["num_recurrent_ppo"]) + int(parameters["num_ddpg"])):
+                    seed = int(random.random() * 100000)
+                    if i < int(parameters["num_a2c"]):
+                        contender_name = f"{trade_window_folder_name}/models/A2C_{i}"
+                        p = multiprocessing.Process(target=ModelTools.train, args=("A2C", seed, train_data, test_data, trade_data, parameters, trade_window_folder_name, contender_name, contenders, logger, turbulence))
+                    elif i < int(parameters["num_a2c"]) + int(parameters["num_recurrent_ppo"]):
+                        contender_name = f"{trade_window_folder_name}/models/Recurrent_PPO_{i}"
+                        p = multiprocessing.Process(target=ModelTools.train, args=("Recurrent_PPO", seed, train_data, test_data, trade_data, parameters, trade_window_folder_name, contender_name, contenders, logger, turbulence))
+                    elif i < int(parameters["num_a2c"]) + int(parameters["num_recurrent_ppo"]) + int(parameters["num_ddpg"]):
+                        contender_name = f"{trade_window_folder_name}/models/DDPG_{i}"
+                        p = multiprocessing.Process(target=ModelTools.train, args=("DDPG", seed, train_data, test_data, trade_data, parameters, trade_window_folder_name, contender_name, contenders, logger, turbulence))
+                    else:
+                        contender_name = f"{trade_window_folder_name}/models/PPO_{i}"
+                        p = multiprocessing.Process(target=ModelTools.train, args=("PPO", seed, train_data, test_data, trade_data, parameters, trade_window_folder_name, contender_name, contenders, logger, turbulence))
+                    p.start()
+                    processes.append(p)
 
-                if len(processes) >= multiprocessing_cores:
-                    for p in processes:
-                        p.join()
-                    processes = []
-            for p in processes:
-                p.join()
-            contenders = list(contenders)
+                    if len(processes) >= multiprocessing_cores:
+                        for p in processes:
+                            p.join()
+                        processes = []
+                for p in processes:
+                    p.join()
+                contenders = list(contenders)
+                
             contenders.sort(key=lambda x: x['score'], reverse=True)
-
             logger.print_out(f"\nFinished training contenders in {(dt.datetime.now() - training_start_time).seconds} seconds.\n")
 
             # Print contenders for debugging

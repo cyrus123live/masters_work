@@ -246,7 +246,7 @@ def test_model(model, test_data, parameters, cash, turbulence, trading = False, 
 
     return pd.DataFrame(history, index=test_data[0].index)
 
-def train(model_type, seed, train_data, test_data, trade_data, parameters, contender_name, contenders, logger, turbulence):
+def train(model_type, seed, train_data, test_data, trade_data, parameters, trade_window_folder_name, contender_name, contenders, logger, turbulence):
 
     # Ensure randomness despite multiprocessing
     random.seed(seed)
@@ -281,7 +281,7 @@ def train(model_type, seed, train_data, test_data, trade_data, parameters, conte
             n_steps=2048,
             batch_size=64,
             learning_rate=3e-4,
-            tensorboard_log= f"./runs/{datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}/tensorboard_log/"
+            tensorboard_log= f"{trade_window_folder_name}/tensorboard_log/{contender_name.split('_')[-1]}/"
         )
         model.policy.optimizer = optim.Adam(
             model.policy.parameters(),
@@ -309,8 +309,8 @@ def train_model(model_type, model, train_data, test_data, trade_data, training_r
         if parameters[f"timesteps_per_round_{model_type}"] == "data_len":
             timesteps = len(train_data)
         else:
-            timesteps = parameters[f"timesteps_per_round_{model_type}"]
-        model.learn(total_timesteps=timesteps, progress_bar=False, reset_num_timesteps=False, tb_log_name=f"run_{i}")
+            timesteps = int(parameters[f"timesteps_per_round_{model_type}"])
+        model.learn(total_timesteps=timesteps, progress_bar=False, reset_num_timesteps=False)#, tb_log_name=f"run_{i}")
         
         test_history = test_model(model, test_data, parameters, parameters['starting_cash'], turbulence, False, model_type)
         sharpe, _ = get_sharpe_and_volatility(test_history, 'portfolio_value')
