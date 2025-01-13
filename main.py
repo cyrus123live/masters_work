@@ -53,12 +53,11 @@ def main():
         # "tickers": ["BTCUSDT"],
         "tickers": ['AXP', 'AAPL', 'VZ', 'BA', 'CAT', 'JPM', 'CVX', 'KO', 'DIS', 'DD', 'XOM', 'HD', 'INTC', 'IBM', 'JNJ', 'MCD', 'MRK', 'MMM', 'NKE', 'PFE', 'PG', 'UNH', 'RTX', 'WMT', 'WBA', 'MSFT', 'CSCO', 'TRV', 'GS', 'V'],
         "verbose": True,
-        "cores": 4
+        "cores": 1
     }
 
     multiprocessing.set_start_method('spawn')
     manager = multiprocessing.Manager()
-    multiprocessing_cores = 4
 
     runs_start_time = dt.datetime.now()
     for run in range(int(sys.argv[1])):
@@ -171,7 +170,7 @@ def main():
                     p.start()
                     processes.append(p)
 
-                    if len(processes) >= multiprocessing_cores:
+                    if len(processes) >= parameters["cores"]:
                         for p in processes:
                             p.join()
                         processes = []

@@ -280,8 +280,8 @@ def train(model_type, seed, train_data, test_data, trade_data, parameters, trade
             verbose=0,
             n_steps=2048,
             batch_size=64,
-            learning_rate=3e-4,
-            tensorboard_log= f"{trade_window_folder_name}/tensorboard_log/{contender_name.split('_')[-1]}/"
+            learning_rate=3e-4
+            #tensorboard_log= f"{trade_window_folder_name}/tensorboard_log/{contender_name.split('_')[-1]}/"
         )
         model.policy.optimizer = optim.Adam(
             model.policy.parameters(),
