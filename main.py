@@ -43,7 +43,7 @@ def main():
         # "indicators": ["close", "low", "high", "volume", "setup_cat", "countdown_completed_cat", "setup_count", "countdown_count", "log-return", "rsi", "stoch_rsi", "atr", "mfi", "supertrend_ub", "supertrend_lb", "chop", "macd", "macds", "macdh"],
         # "indicators": ["close_normalized"],
         # "indicators": ["close"],
-        "fees": 0, # Doesn't work for crypto yet (note: ensemble uses 0.001)
+        "fees": 0.0001, # Works for discrete only (note: ensemble uses 0.001, MEXC charges 0.01% = 0.0001, 2017 assumes 0.25% = 0.0025)
         "use_turbulence": False,
         "turbulence_threshold": 200, # Doesn't work for crypto yet
         "t": "minutely",

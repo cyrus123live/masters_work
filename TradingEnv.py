@@ -89,9 +89,14 @@ class TradingEnv(gym.Env):
         if self.parameters["buy_sell_action_space"] == "discrete":
 
             decision = int(action)
+            charge_fees = True
+            if decision == 0 and self.cash > 0 or self.stock[decision - 1] > 0:
+                charge_fees = False
+
             portfolio_value = sum([df["close"].iloc[self.current_step] * self.stock[i] for i, df in enumerate(self.data)]) + self.cash
             self.stock = [0 for i in range(len(self.data))]
             self.cash = 0
+            if charge_fees: portfolio_value = portfolio_value * (1 - self.parameters["fees"])
             if decision > 0:
                 self.stock[decision - 1] = portfolio_value / self.data[decision - 1]["close"].iloc[self.current_step]
             else:
