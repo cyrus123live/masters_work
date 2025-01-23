@@ -17,30 +17,28 @@ import json
 def main():
 
     parameters = {
-        # "starting_month": "2022-4", # Half-hourly data doesn't work for 2020-01 and below (this parameter is for trading month)
-        # "ending_month": "2023-4",
-        "starting_month": "2016-1", 
-        "ending_month": "2020-5",
-        "train_months": 84,
-        "test_months": 0,
+        "starting_month": "2020-3", # Half-hourly data doesn't work for 2020-01 and below (this parameter is for trading month)
+        "ending_month": "2024-9", # note: can do 2022-2024 for good and bad conditions
+        "train_months": 1,
+        "test_months": 1,
         "trade_months": 1,
-        "num_recurrent_ppo": 1,
+        "num_recurrent_ppo": 0,
         "num_ddpg": 0, # Note: DDPG doesn't work for discrete yet 
-        "num_ppo": 0,
-        "num_a2c": 0, 
+        "num_ppo": 8,
+        "num_a2c": 8, 
         "test_before_train": False,
-        "training_rounds_per_contender": 5000,
+        "training_rounds_per_contender": 1,
         "timesteps_per_round_Recurrent_PPO": "data_len",
         "timesteps_per_round_DDPG": 10000, 
         "timesteps_per_round_PPO": 50000, 
-        "timesteps_per_round_A2C": 25000, 
+        "timesteps_per_round_A2C": 50000, 
         "starting_cash": 1000000,
-        "buy_sell_action_space": "continuous", 
-        "ent_coef": 0,
+        "buy_sell_action_space": "discrete", 
+        "ent_coef": 0, # note: disabled for a2c
         "shorting": False,
-        'validation_parameter': "last",
-        # "indicators": ["close_normalized", 'macd_normalized', 'rsi_normalized', 'cci_normalized', "adx_normalized"],
-        "indicators": ["close", 'macd', 'rsi', 'cci', "adx"],
+        'validation_parameter': "sharpe",
+        "indicators": ["close_normalized", 'macd_normalized', 'rsi_normalized', 'cci_normalized', "adx_normalized"],
+        # "indicators": ["close", 'macd', 'rsi', 'cci', "adx"],
         # "indicators": ["close", "setup_cat", "countdown_completed_cat", "setup_count", "countdown_count"],
         # "indicators": ["close", "low", "high", "volume", "setup_cat", "countdown_completed_cat", "setup_count", "countdown_count", "log-return", "rsi", "stoch_rsi", "atr", "mfi", "supertrend_ub", "supertrend_lb", "chop", "macd", "macds", "macdh"],
         # "indicators": ["close_normalized"],
@@ -48,12 +46,12 @@ def main():
         "fees": 0, # Doesn't work for crypto yet (note: ensemble uses 0.001)
         "use_turbulence": False,
         "turbulence_threshold": 200, # Doesn't work for crypto yet
-        "t": "daily",
-        # "tickers": ["BTCUSDT", "ETHUSDT", "XRPUSDT", "BNBUSDT", "TRXUSDT"],
+        "t": "minutely",
+        "tickers": ["BTCUSDT", "ETHUSDT", "XRPUSDT", "BNBUSDT", "TRXUSDT"],
         # "tickers": ["BTCUSDT"],
-        "tickers": ['AXP', 'AAPL', 'VZ', 'BA', 'CAT', 'JPM', 'CVX', 'KO', 'DIS', 'DD', 'XOM', 'HD', 'INTC', 'IBM', 'JNJ', 'MCD', 'MRK', 'MMM', 'NKE', 'PFE', 'PG', 'UNH', 'RTX', 'WMT', 'WBA', 'MSFT', 'CSCO', 'TRV', 'GS', 'V'],
+        # "tickers": ['AXP', 'AAPL', 'VZ', 'BA', 'CAT', 'JPM', 'CVX', 'KO', 'DIS', 'DD', 'XOM', 'HD', 'INTC', 'IBM', 'JNJ', 'MCD', 'MRK', 'MMM', 'NKE', 'PFE', 'PG', 'UNH', 'RTX', 'WMT', 'WBA', 'MSFT', 'CSCO', 'TRV', 'GS', 'V'],
         "verbose": True,
-        "cores": 1
+        "cores": 4
     }
 
     multiprocessing.set_start_method('spawn')

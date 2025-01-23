@@ -143,6 +143,10 @@ run_directory = 'runs/2025-01-03-16-14-01'
 run_directory = 'runs/2025-01-03-18-18-35' # Five runs of closest recurrent PPO implementation possible without creating custom policy_kwargs LSTM (12 month training, DJI, Un-normalized, 30*length of training data timesteps) (random performance)
 run_directory = 'runs/2025-01-03-21-00-43' # 7 runs of non-normalized A2C setup, absolutely abysmal, worse then normalized
 
+run_directory = 'runs/2025-01-13-20-01-06' # 10 runs of 16 A2C, Ensemble indicators non-Normalized 2023-2024
+run_directory = 'runs/2025-01-14-15-10-51' # 10 runs of 16 A2C, Ensemble indicators Normalized 2023-2024
+run_directory = 'runs/2025-01-15-12-03-42' # 10 runs of 8/8, ensemble indicators normalized crypto portfolio 2020-3 - 2024-9
+
 if len(sys.argv) > 1:
     run_directory = sys.argv[1]
 
@@ -151,7 +155,7 @@ if "0" in os.listdir(run_directory):
     histories = []
     parameters = ""
 
-    for i in range(len(os.listdir(run_directory))):
+    for i in range(len(os.listdir(run_directory)) - 1):
 
         history = ModelTools.combine_trade_window_histories(run_directory, i)
         with open(f"{run_directory}/{i}/parameters.json", 'r') as f:

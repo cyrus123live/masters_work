@@ -214,7 +214,8 @@ def plot_histories(histories, parameters):
             close_data = pd.DataFrame(index=history["closes"].index)
             close_data["close"] = [float(history["closes"].iloc[j][i]) for j in range(len(history["closes"]))]
             to_plot[f'close_{i}'] = [float(c) for c in close_data["close"] / float(history["closes"].iloc[0][i])]
-            plt.plot(to_plot[f'close_{i}'], color=colours[i])
+            # plt.plot(to_plot[f'close_{i}'], color=colours[i])
+            plt.semilogy(to_plot[f'close_{i}'], color=colours[i])
         
     for j, history in enumerate(histories):
 
@@ -222,7 +223,8 @@ def plot_histories(histories, parameters):
         plt.plot(to_plot['portfolio'], label="Portfolio Value")
 
     to_plot['buy_hold'] = buy_hold_history["portfolio_value"] / buy_hold_history.iloc[0]["portfolio_value"]
-    plt.plot(to_plot['buy_hold'], label="Buy and Hold Strategy", color="black")
+    # plt.plot(to_plot['buy_hold'], label="Buy and Hold Strategy", color="black")
+    plt.semilogy(to_plot['buy_hold'], label="Buy and Hold Strategy", color="black")
     plt.show()
 
 # Returns a history dataframe using TradingEnv
@@ -260,7 +262,7 @@ def train(model_type, seed, train_data, test_data, trade_data, parameters, trade
     train_env = Monitor(TradingEnv(train_data, parameters, parameters['starting_cash'], turbulence))
     if model_type == "A2C":
         # model = A2C("MlpPolicy", train_env, verbose=0, seed=seed, n_steps= 5, ent_coef= 0.005, learning_rate= 0.0007) #ent_coef=parameters["ent_coef"])
-        model = A2C("MlpPolicy", train_env, verbose=0, seed=seed, ent_coef=parameters["ent_coef"])
+        model = A2C("MlpPolicy", train_env, verbose=0, seed=seed) #ent_coef=parameters["ent_coef"])
     elif model_type == "DDPG":
         if parameters["buy_sell_action_space"] == "discrete":
             n_actions = train_env.action_space.n
