@@ -16,6 +16,14 @@ import json
 
 def main():
 
+    if sys.argv[2] is not None:
+        indicators = sys.argv[2].split(",")
+    else:
+        # indicators = ["close_normalized", 'macd_normalized', 'rsi_normalized', 'cci_normalized', "adx_normalized"]
+        indicators = ["close", "low", "high", "volume", "setup_cat", "countdown_completed_cat", "setup_count", "countdown_count", "log-return", "rsi", "stoch_rsi", "atr", "mfi", "supertrend_ub", "supertrend_lb", "chop", "macd", "macds", "macdh"]
+
+    print(indicators)
+
     parameters = {
         "starting_month": "2020-3", # Half-hourly data doesn't work for 2020-01 and below (this parameter is for trading month)
         "ending_month": "2024-9", # note: can do 2022-2024 for good and bad conditions
@@ -24,30 +32,31 @@ def main():
         "trade_months": 1,
         "num_recurrent_ppo": 0,
         "num_ddpg": 0, # Note: DDPG doesn't work for discrete yet 
-        "num_ppo": 8,
-        "num_a2c": 8, 
+        "num_ppo": 0,
+        "num_a2c": 32, 
         "test_before_train": False,
         "training_rounds_per_contender": 1,
         "timesteps_per_round_Recurrent_PPO": "data_len",
         "timesteps_per_round_DDPG": 10000, 
         "timesteps_per_round_PPO": 50000, 
-        "timesteps_per_round_A2C": 50000, 
+        "timesteps_per_round_A2C": 25000, 
         "starting_cash": 1000000,
         "buy_sell_action_space": "discrete", 
         "ent_coef": 0, # note: disabled for a2c
         "shorting": False,
         'validation_parameter': "sharpe",
-        "indicators": ["close_normalized", 'macd_normalized', 'rsi_normalized', 'cci_normalized', "adx_normalized"],
+        "indicators": indicators,
         # "indicators": ["close", 'macd', 'rsi', 'cci', "adx"],
         # "indicators": ["close", "setup_cat", "countdown_completed_cat", "setup_count", "countdown_count"],
         # "indicators": ["close", "low", "high", "volume", "setup_cat", "countdown_completed_cat", "setup_count", "countdown_count", "log-return", "rsi", "stoch_rsi", "atr", "mfi", "supertrend_ub", "supertrend_lb", "chop", "macd", "macds", "macdh"],
         # "indicators": ["close_normalized"],
         # "indicators": ["close"],
-        "fees": 0.0001, # Works for discrete only (note: ensemble uses 0.001, MEXC charges 0.01% = 0.0001, 2017 assumes 0.25% = 0.0025)
+        "fees": 0.0005, # Works for discrete only (note: ensemble uses 0.001, MEXC charges 0.01% = 0.0001, 2017 assumes 0.25% = 0.0025)
         "use_turbulence": False,
         "turbulence_threshold": 200, # Doesn't work for crypto yet
         "t": "minutely",
-        "tickers": ["BTCUSDT", "ETHUSDT", "XRPUSDT", "BNBUSDT", "TRXUSDT"],
+        # "tickers": ["BTCUSDT", "ETHUSDT", "XRPUSDT", "BNBUSDT", "TRXUSDT"],
+        "tickers": ["spy"],
         # "tickers": ["BTCUSDT"],
         # "tickers": ['AXP', 'AAPL', 'VZ', 'BA', 'CAT', 'JPM', 'CVX', 'KO', 'DIS', 'DD', 'XOM', 'HD', 'INTC', 'IBM', 'JNJ', 'MCD', 'MRK', 'MMM', 'NKE', 'PFE', 'PG', 'UNH', 'RTX', 'WMT', 'WBA', 'MSFT', 'CSCO', 'TRV', 'GS', 'V'],
         "verbose": True,
